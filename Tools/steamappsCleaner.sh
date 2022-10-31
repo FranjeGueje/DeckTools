@@ -42,7 +42,7 @@ function lanzar() {
 
         for i in ${RUN}; do
             echo "--> Eliminando el ID: $i"
-            rm -rf "$DIR/$i:?"
+            rm -rf "${DIR:?}"/"$i"
         done
     fi
 }
