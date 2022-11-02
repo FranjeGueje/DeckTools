@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Función para todas las comprobaciones iniciales
+# Función para ejecutar asistente y borrar
 function lanzar() {
 
     LISTAP=()
@@ -12,11 +12,15 @@ function lanzar() {
 
             TAMANO=$(du -h -d 0 "$i" | cut -f 1)
 
-            if SALIDA=$(grep "$N" < "$TEMP"); then
+            if SALIDA=$(grep "$N" <"$IDPT"); then
                 #Añadirlo a la lista pero no borrar.
                 LISTAP+=("0" "$N" "$SALIDA" "$TAMANO")
             else
-                LISTAP+=("1" "$N" "Desconocido" "$TAMANO")
+                if SALIDASC=$(grep "$N" <"$IDSC"); then
+                    LISTAP+=("0" "$N" "${SALIDASC//$N}" "$TAMANO")
+                else
+                    LISTAP+=("1" "$N" "Desconocido" "$TAMANO")
+                fi
             fi
         fi
     done
@@ -36,20 +40,22 @@ function lanzar() {
             --title="SteamApps Cleaner" \
             --width=250 \
             --text="Saliendo del programa.\nDisfruta tu Deck."
-        exit 3
+        salida
+        exit 1
     fi
-    
+
     echo "Seleccionados: ${RUN}"
 
     if [ "${RUN}" ]; then
         zenity --question \
-            --title="¿Seguro que desea continuar?" --width=500 --height=200 \
+            --title="Eliminar carpetas" --width=500 --height=200 \
             --ok-label="Eliminar y Continuar" \
             --cancel-label="Salir" \
-            --text="Se eliminarán los direcotrios con IDs: ${RUN}"
+            --text="Eliminas los directorios con los siguientes IDs?\n${RUN}"
         ans=$?
         if [ ! $ans -eq 0 ]; then
-            exit 3
+            salida
+            exit 2
         fi
 
         for i in ${RUN}; do
@@ -59,8 +65,37 @@ function lanzar() {
     fi
 }
 
-TEMP=/tmp/steamappsCleaner.tmp
-flatpak run com.github.Matoking.protontricks -l 2>/dev/null >$TEMP
+# Función para generar todos los IDs de Juegos
+function entrada() {
+    IDPT=/tmp/PTsteamappsCleaner.tmp
+    IDSC=/tmp/SCsteamappsCleaner.tmp
+
+    rm -rf "$IDPT" "$IDSC" 2> /dev/null
+
+    #Generamos los IDs de protontricks
+    flatpak run com.github.Matoking.protontricks -l 2>/dev/null >$IDPT
+    
+    #Generamos los IDs de de los ficheros directamente
+    grep -n "name" "$HOME"/.steam/root/steamapps/*.acf 2>/dev/null \
+      | sed -e 's/^.*_//;s/\.acf:.:/ /;s/name//;s/"//g;s/\t//g;s/ /-/' | awk -F"-" '{printf "%-40s %s\n", $2, $1}' | sort | tee -a $IDSC >/dev/null
+        
+    LISTA=$(find /run/media -maxdepth 1 -mindepth 1 -type d)
+    for SD in $LISTA; do
+        grep -n "name" "$SD"/steamapps/*.acf 2>/dev/null \
+           | sed -e 's/^.*_//;s/\.acf:.:/ /;s/name//;s/"//g;s/\t//g;s/ /-/' | awk -F"-" '{printf "%-40s %s\n", $2, $1}' | sort | tee -a $IDSC >/dev/null
+    done
+}
+
+# Función para generar todos los IDs de Juegos
+function salida() {
+    rm -rf "$IDPT" "$IDSC" 2> /dev/null
+}
+
+#########################################
+##      main
+#########################################
+#Hacemos las tareas iniciales
+entrada
 
 # Elimianmos los Compatdata
 DIR=/home/deck/.steam/root/steamapps/compatdata/
@@ -75,19 +110,21 @@ lanzar
 LISTA=$(find /run/media -maxdepth 1 -mindepth 1 -type d)
 
 for SD in $LISTA; do
-    
-    if [ -d "$SD/steamapps/compatdata/" ];then
+
+    if [ -d "$SD/steamapps/compatdata/" ]; then
         DIR="$SD/steamapps/compatdata/"
         TITLE="COMPATDATA"
         lanzar
     fi
 
-    if [ -d "$SD/steamapps/shadercache/" ];then
+    if [ -d "$SD/steamapps/shadercache/" ]; then
         DIR="$SD/steamapps/shadercache/"
         TITLE="SHADERCACHE"
         lanzar
     fi
 
 done
+
+salida
 
 exit 0
