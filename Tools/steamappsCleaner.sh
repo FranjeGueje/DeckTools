@@ -43,10 +43,10 @@ function lanzar() {
 
     if [ "${RUN}" ]; then
         zenity --question \
-            --title="¿Seguro que desea continuar?" --width=1000 --height=300 \
+            --title="¿Seguro que desea continuar?" --width=500 --height=200 \
             --ok-label="Eliminar y Continuar" \
             --cancel-label="Salir" \
-            --text="Se eliminarán los direcotrio con IDs: ${RUN}"
+            --text="Se eliminarán los direcotrios con IDs: ${RUN}"
         ans=$?
         if [ ! $ans -eq 0 ]; then
             exit 3
