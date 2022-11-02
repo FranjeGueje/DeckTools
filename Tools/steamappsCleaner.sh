@@ -21,18 +21,30 @@ function lanzar() {
         fi
     done
 
+    RUN=""
+
     RUN=$(zenity --list --title="*$TITLE* a Eliminar" --height=600 --width=900 \
-        --ok-label="Aceptar" --cancel-label="Cancelar" \
+        --ok-label="Continuar..." --cancel-label="Salir" \
         --text="Selecciona los $TITLE a eliminar de $DIR" --checklist \
         --column="" --column="ID" --column="Titulo" --column="Espacio en disco" --separator=" " \
         "${LISTAP[@]}")
 
+    ans=$?
+    if [ ! $ans -eq 0 ]; then
+        echo "No quiere continuar. Salimos"
+        zenity --info \
+            --title="SteamApps Cleaner" \
+            --width=250 \
+            --text="Saliendo del programa.\nDisfruta tu Deck."
+        exit 3
+    fi
+    
     echo "Seleccionados: ${RUN}"
 
     if [ "${RUN}" ]; then
         zenity --question \
             --title="¿Seguro que desea continuar?" --width=1000 --height=300 \
-            --ok-label="Continuar" \
+            --ok-label="Eliminar y Continuar" \
             --cancel-label="Salir" \
             --text="Se eliminarán los direcotrio con IDs: ${RUN}"
         ans=$?
