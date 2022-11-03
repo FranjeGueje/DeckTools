@@ -51,9 +51,7 @@ function lanzar() {
     ans=$?
     if [ ! $ans -eq 0 ]; then
         echo "No quiere continuar. Salimos"
-        zenity --info \
-            --title="SteamApps Cleaner" \
-            --width=250 \
+        zenity --timeout 2 --info  --title="SteamApps Cleaner" --width=250 \
             --text="Saliendo...\nDisfruta tu Deck o tu dispositivo Steam."
         salida
         exit 1
