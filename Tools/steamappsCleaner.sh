@@ -92,7 +92,7 @@ function entrada() {
     rm -rf "$IDPT" "$IDSC" 2>/dev/null
 
     #Generamos los IDs de protontricks
-    if flatpak run com.github.Matoking.pprotontricks -l 2>/dev/null >$IDPT; then
+    if flatpak run com.github.Matoking.protontricks -l 2>/dev/null >$IDPT; then
         echo protontricks encontrado en flatpak.
     else
         if protontricks -l 2>/dev/null >$IDPT; then
