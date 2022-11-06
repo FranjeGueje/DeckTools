@@ -8,11 +8,13 @@
 # SALIDAS:
 #   0: Todo correcto, llegamos al final.
 #   1: Si hemos pulsado el botón de "Salir" a mitad.
-#   2: Si salimos cancelando la eliminación
+#   2: Si salimos cancelando la eliminación.
+#   33: Salimos si no tenemos protontricks.
 ##############################################################################################################################################################
 
 
-VERSION="1.0"
+VERSION="1.1"
+NOMBRE="Steamapps Cleaner"
 RUTASEXTRA="/run/media /run/media/$USER"
 
 # Función para ejecutar asistente y borrar
@@ -51,7 +53,7 @@ function lanzar() {
     ans=$?
     if [ ! $ans -eq 0 ]; then
         echo "No quiere continuar. Salimos"
-        zenity --timeout 2 --info  --title="SteamApps Cleaner" --width=250 \
+        zenity --timeout 2 --info  --title="$NOMBRE" --width=250 \
             --text="Saliendo...\nDisfruta tu Deck o tu dispositivo Steam."
         salida
         exit 1
@@ -82,7 +84,7 @@ function lanzar() {
 function entrada() {
 
     #Mostramos la versión
-    zenity --timeout 2 --info --text "Bienvenido a Steamapps Cleaner.\n\t\tVer: $VERSION" --width=300 --height=50
+    zenity --timeout 2 --info --text "Bienvenido a $NOMBRE.\n\t\tVer: $VERSION" --width=300 --height=50
 
     IDPT=/tmp/PTsteamappsCleaner.tmp
     IDSC=/tmp/SCsteamappsCleaner.tmp
@@ -90,7 +92,28 @@ function entrada() {
     rm -rf "$IDPT" "$IDSC" 2>/dev/null
 
     #Generamos los IDs de protontricks
-    flatpak run com.github.Matoking.protontricks -l 2>/dev/null >$IDPT
+    if flatpak run com.github.Matoking.pprotontricks -l 2>/dev/null >$IDPT; then
+        echo protontricks encontrado en flatpak.
+    else
+        if protontricks -l 2>/dev/null >$IDPT; then
+            echo protontricks encontrado como aplicación.
+        else
+            zenity --timeout 10 --error --text \
+             "No se ha encontrado el ejecutable necesario protontricks.\n\n$NOMBRE no tiene todas las herramientas para mostrar todos los nombres de juegos y aplicaciones." \
+             --width=300 --height=50
+            
+            zenity --question \
+                --title="**** ATENCION **** " --width=500 --height=200 \
+                --ok-label="Continuar, pero limitado" \
+                --cancel-label="Salir" \
+                --text="Se ha detectado que faltan herramientas necesarias para que $NOMBRE tenga toda su funcionalidad.\n\nDesea continuar con limitaciones?"
+            ans=$?
+            if [ ! $ans -eq 0 ]; then
+                salida
+                exit 33
+            fi
+        fi
+    fi
 
     #Generamos los IDs de de los ficheros directamente
     grep -n "name" "$HOME"/.steam/root/steamapps/*.acf 2>/dev/null |
