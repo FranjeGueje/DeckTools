@@ -2,6 +2,7 @@
 
 ##############################################################################################################################################################
 # AUTOR: Paco Guerrero <fjgj1@hotmail.com>
+# LICENSE: GNU General Public License v3.0 (https://github.com/FranjeGueje/DeckTools/blob/master/LICENSE)
 # ABOUT: Busca compatdata y shadercache en los dispositivos mostrando los nombres de los que se puedan utilizar y muesta como "Desconocido" los huérfanos.
 #           perfecto para eliminarlos.
 # REQUISITOS: Para una mejor salida de juego nonsteam se requiere Protontricks
@@ -13,7 +14,7 @@
 ##############################################################################################################################################################
 
 
-VERSION="1.1"
+VERSION="1.2"
 NOMBRE="Steamapps Cleaner"
 RUTASEXTRA="/run/media /run/media/$USER"
 
@@ -84,7 +85,7 @@ function lanzar() {
 function entrada() {
 
     #Mostramos la versión
-    zenity --timeout 2 --info --text "Bienvenido a $NOMBRE.\n\t\tVer: $VERSION" --width=300 --height=50
+    zenity --timeout 2 --title="$NOMBRE $VERSION" --info --text "Bienvenido a $NOMBRE.\n\Version: $VERSION.\n\nLicencia: GNU General Public License v3.0" --width=300 --height=50
 
     IDPT=/tmp/PTsteamappsCleaner.tmp
     IDSC=/tmp/SCsteamappsCleaner.tmp
