@@ -29,11 +29,11 @@ function lanzar() {
 
             TAMANO=$(du -h -d 0 "$i" | cut -f 1)
 
-            if SALIDA=$(grep "$N" <"$IDPT"); then
+            if SALIDA=$(grep -w "$N" <"$IDPT"); then
                 #Añadirlo a la lista pero no borrar.
                 LISTAP+=("0" "$N" "$SALIDA" "$TAMANO")
             else
-                if SALIDASC=$(grep "$N" <"$IDSC"); then
+                if SALIDASC=$(grep -w "$N" <"$IDSC"); then
                     LISTAP+=("0" "$N" "${SALIDASC//$N/}" "$TAMANO")
                 else
                     LISTAP+=("1" "$N" "Desconocido" "$TAMANO")
