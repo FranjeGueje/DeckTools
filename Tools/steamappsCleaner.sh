@@ -13,101 +13,93 @@
 #   33: Salimos si no tenemos protontricks.
 ##############################################################################################################################################################
 
-
-VERSION="1.2"
+#########################################
+##      VARIABLES GLOBALES
+#########################################
+VERSION="2.0"
 NOMBRE="Steamapps Cleaner"
+# Ruta de Steam
+RUTASTEAM="$HOME/.local/share/Steam"
+# Rutas que explorará el fichero
 RUTASEXTRA="/run/media /run/media/$USER"
+# Fichero temporal para ProtonTricks
+IDPT=/tmp/PTsteamappsCleaner.tmp
+# Fichero temporal para otro script
+IDSC=/tmp/SCsteamappsCleaner.tmp
+# Nombre de fichero cache de nombre
+NOMCACHE="$RUTASTEAM/steamapps/steamappsCleaner"
 
-# Función para ejecutar asistente y borrar
-function lanzar() {
+#########################################
+##      FUNCIONES
+#########################################
 
-    LISTAP=()
-    LISTA=$(find "$DIR" -maxdepth 1 -mindepth 1 -type d)
+# Función con todas las traducciones
+function fLanguage() {
+    # establecemos las traducciones según idioma
+    case "$LANG" in
+    es_ES.UTF-8)
+        lTEXTBIENVENIDA="Bienvenido a $NOMBRE.\nVersion: $VERSION.\n\nLicencia: GNU General Public License v3.0"
+        lTEXTNOPROTON="No se ha encontrado el ejecutable necesario protontricks.\n\n$NOMBRE no tiene todas las herramientas para mostrar todos los nombres de juegos y aplicaciones."
+        lATENCION="**** ATENCION ****"
+        lCONTINLIMIT="Continuar, pero limitado"
+        lSALIR="Salir"
+        lTEXTLIMIT="Se ha detectado que faltan herramientas necesarias para que $NOMBRE tenga toda su funcionalidad.\n\nDesea continuar con limitaciones?"
+        lAELIMINAR="$NOMBRE $VERSION"
+        lBOTONELIMINAR="Eliminar"
+        lTEXTPRINCIPAL="Selecciona los objectos a eliminar de estas ubicaciones:"
+        lID="ID"
+        lTITULO="Titulo"
+        lTIPO="Tipo"
+        lTIPODISCO="Disco"
+        lTAMANO="Espacio"
+        lANTES="Antes fue"
+        ;;
+    *)
+        lTEXTBIENVENIDA="Wellcome to $NOMBRE.\nVersion: $VERSION.\n\nLicense: GNU General Public License v3.0"
+        lTEXTNOPROTON="I can't find protontricks.\n\n$NOMBRE don't have the necesary tools to show all names of games."
+        lATENCION="**** WARNING ****"
+        lCONTINLIMIT="Continue but limited"
+        lSALIR="Exit"
+        lTEXTLIMIT="It has been detected that tools necessary for $NAME to have full functionality are missing.\n\nDo you want to continue with limitations?"
+        lAELIMINAR="$NOMBRE $VERSION"
+        lBOTONELIMINAR="Delete"
+        lTEXTPRINCIPAL="Select the objects to delete from this locations:"
+        lID="ID"
+        lTITULO="Title"
+        lTIPO="Type"
+        lTIPODISCO="Disk"
+        lTAMANO="Use on disk"
+        lANTES="Antes fue"
+        ;;
+    esac
 
-    for i in $LISTA; do
-        N=$(basename "$i")
-        if [ "$N" -ne 0 ]; then
-
-            TAMANO=$(du -h -d 0 "$i" | cut -f 1)
-
-            if SALIDA=$(grep -w "$N" <"$IDPT"); then
-                #Añadirlo a la lista pero no borrar.
-                LISTAP+=("0" "$N" "$SALIDA" "$TAMANO")
-            else
-                if SALIDASC=$(grep -w "$N" <"$IDSC"); then
-                    LISTAP+=("0" "$N" "${SALIDASC//$N/}" "$TAMANO")
-                else
-                    LISTAP+=("1" "$N" "Desconocido" "$TAMANO")
-                fi
-            fi
-        fi
-    done
-
-    RUN=""
-
-    RUN=$(zenity --list --title="*$TITLE* a Eliminar" --height=600 --width=900 \
-        --ok-label="Continuar..." --cancel-label="Salir" \
-        --text="Selecciona los $TITLE a eliminar de $DIR" --checklist \
-        --column="" --column="ID" --column="Titulo" --column="Espacio en disco" --separator=" " \
-        "${LISTAP[@]}")
-
-    ans=$?
-    if [ ! $ans -eq 0 ]; then
-        echo "No quiere continuar. Salimos"
-        zenity --timeout 2 --info  --title="$NOMBRE" --width=250 \
-            --text="Saliendo...\nDisfruta tu Deck o tu dispositivo Steam."
-        salida
-        exit 1
-    fi
-
-    echo "Seleccionados: ${RUN}"
-
-    if [ "${RUN}" ]; then
-        zenity --question \
-            --title="**** ATENCION - CUIDADO **** " --width=500 --height=200 \
-            --ok-label="Eliminar y Continuar" \
-            --cancel-label="Salir" \
-            --text="Eliminas los directorios con los siguientes IDs?\n\n${RUN}\n\n\nRecuerda que estan ubicados en:\n${DIR}"
-        ans=$?
-        if [ ! $ans -eq 0 ]; then
-            salida
-            exit 2
-        fi
-
-        for i in ${RUN}; do
-            echo "--> Eliminando el ID: $i"
-            rm -rf "${DIR:?}"/"$i"
-        done
-    fi
+    #export $lBIENVENIDA
 }
 
 # Función para generar todos los IDs de Juegos
-function entrada() {
+function fMensajeBienvenida() {
 
     #Mostramos la versión
-    zenity --timeout 2 --title="$NOMBRE $VERSION" --info --text "Bienvenido a $NOMBRE.\n\Version: $VERSION.\n\nLicencia: GNU General Public License v3.0" --width=300 --height=50
+    zenity --timeout 2 --title="$NOMBRE $VERSION" --info --text "$lTEXTBIENVENIDA" --width=300 --height=50
 
-    IDPT=/tmp/PTsteamappsCleaner.tmp
-    IDSC=/tmp/SCsteamappsCleaner.tmp
+}
 
+# Comprueba los requisitos de la herramienta
+function fRequisitos() {
+
+    # Borramos los temporales
     rm -rf "$IDPT" "$IDSC" 2>/dev/null
 
     #Generamos los IDs de protontricks
     if flatpak run com.github.Matoking.protontricks -l 2>/dev/null >$IDPT; then
-        echo protontricks encontrado en flatpak.
+        echo "(log) protontricks encontrado en flatpak."
     else
         if protontricks -l 2>/dev/null >$IDPT; then
-            echo protontricks encontrado como aplicación.
+            echo "(log)protontricks encontrado como aplicación."
         else
-            zenity --timeout 10 --error --text \
-             "No se ha encontrado el ejecutable necesario protontricks.\n\n$NOMBRE no tiene todas las herramientas para mostrar todos los nombres de juegos y aplicaciones." \
-             --width=300 --height=50
-            
-            zenity --question \
-                --title="**** ATENCION **** " --width=500 --height=200 \
-                --ok-label="Continuar, pero limitado" \
-                --cancel-label="Salir" \
-                --text="Se ha detectado que faltan herramientas necesarias para que $NOMBRE tenga toda su funcionalidad.\n\nDesea continuar con limitaciones?"
+            zenity --timeout 10 --error --text "$lTEXTNOPROTON" --width=300 --height=50
+            zenity --question --title="$lATENCION" --width=500 --height=200 --ok-label="$lCONTINLIMIT" --cancel-label="$lSALIR" --text="$lTEXTLIMIT"
+
             ans=$?
             if [ ! $ans -eq 0 ]; then
                 salida
@@ -116,60 +108,163 @@ function entrada() {
         fi
     fi
 
-    #Generamos los IDs de de los ficheros directamente
-    grep -n "name" "$HOME"/.steam/root/steamapps/*.acf 2>/dev/null |
-            sed -e 's/^.*_//;s/\.acf:.:/ /;s/name//;s/"//g;s/\t//g;s/ /-/' | awk -F"-" '{printf "%-40s %s\n", $2, $1}' | sort | tee -a $IDSC >/dev/null
-
-    for j in $RUTASEXTRA; do
-        LISTA=$(find "$j" -maxdepth 1 -mindepth 1 -type d)
-        for SD in $LISTA; do
-            grep -n "name" "$SD"/steamapps/*.acf 2>/dev/null |
-                sed -e 's/^.*_//;s/\.acf:.:/ /;s/name//;s/"//g;s/\t//g;s/ /-/' | awk -F"-" '{printf "%-40s %s\n", $2, $1}' | sort | tee -a $IDSC >/dev/null
-        done
-    done
 }
 
 # Función para generar todos los IDs de Juegos
+function fRecargaID() {
+
+    #Generamos los IDs de de los ficheros directamente
+    grep -n "name" "$DIR"/*.acf 2>/dev/null |
+        sed -e 's/^.*_//;s/\.acf:.:/ /;s/name//;s/"//g;s/\t//g;s/ /-/' | awk -F"-" '{printf "%-40s %s\n", $2, $1}' | sort | tee -a $IDSC >/dev/null
+
+}
+
+# Función para ejecutar limpieza de un directorio steamapps
+function fPreparaSteamapps() {
+    # Subdirectorios
+    SUBD="compatdata shadercache"
+
+    # Disco
+    [ "$(dirname "$DIR")" == "$RUTASTEAM" ] && DISCO="SSD" || DISCO="$(basename "$(dirname "$DIR")")"
+    [ -d "$NOMCACHE" ] || mkdir "$NOMCACHE"
+
+    UBICACIONES+="\n\t$DISCO)\n\t\t|--> $DIR\n"
+
+    ## Seleccionamos subelemento
+    for SUBDIR in $SUBD; do
+        LISTA=$(find "$DIR/$SUBDIR" -maxdepth 1 -mindepth 1 -type d)
+
+        for i in $LISTA; do
+            N=$(basename "$i")
+            if [ "$N" -ne 0 ]; then
+
+                TAMANO=$(du -h -d 0 "$i" | cut -f 1)
+
+                if SALIDA=$(grep -w "$N" <"$IDPT"); then
+                    LISTAP+=("0" "$i" "$N" "$SALIDA" "$TAMANO" "$DISCO" "${SUBDIR^}" "N/A")
+                    echo "$SALIDA" | tee "$NOMCACHE/$N.txt" >/dev/null
+                else
+                    if SALIDASC=$(grep -w "$N" <"$IDSC"); then
+                        LISTAP+=("0" "$i" "$N" "${SALIDASC//$N/}" "$TAMANO" "$DISCO" "${SUBDIR^}" "N/A")
+                        echo "${SALIDASC//$N/}" | tee "$NOMCACHE/$N.txt" >/dev/null
+                    else
+                        if [ -f "$NOMCACHE/$N.txt" ]; then
+                            LISTAP+=("1" "$i" "$N" "Desconocido" "$TAMANO" "$DISCO" "${SUBDIR^}" "$(cat "$NOMCACHE/$N.txt")")
+                        else
+                            LISTAP+=("1" "$i" "$N" "Desconocido" "$TAMANO" "$DISCO" "${SUBDIR^}" "¿?")
+                        fi
+                    fi
+                fi
+            fi
+        done
+    done
+
+}
+
+# Gestiona los posibles Steamapps
+function fGestionarDirSteamapps() {
+    # Gestionar directorio steamapps principal
+    [ -d "$RUTASTEAM/steamapps" ] && DIR="$RUTASTEAM/steamapps" && fPreparaSteamapps
+
+    # Gestionar rutas extras para encontrar steamapps
+    for j in $RUTASEXTRA; do
+        if [ -d "$j" ]; then
+
+            LISTA=$(find "$j" -maxdepth 1 -mindepth 1 -type d)
+
+            for SD in $LISTA; do
+
+                if [ -d "$SD/steamapps/compatdata/" ] || [ -d "$SD/steamapps/shadercache/" ]; then
+                    DIR="$SD/steamapps"
+                    fPreparaSteamapps
+                fi
+
+            done
+        fi
+    done
+}
+
+# Muestra el dialogo principal
+function fMostrarDialogo() {
+    RUN=$(zenity --list --title="$lAELIMINAR" --height=600 --width=900 \
+        --ok-label="$lBOTONELIMINAR" --cancel-label="$lSALIR" --text="$lTEXTPRINCIPAL\n$UBICACIONES\n" --checklist \
+        --column="" --column="Ubicacion" --column="$lID" --column="$lTITULO" --column="$lTAMANO" --column="$lTIPODISCO" --column="$lTIPO" --column="$lANTES" --separator="\n" \
+        --hide-column=2 "${LISTAP[@]}")
+
+    ans=$?
+    if [ ! $ans -eq 0 ]; then
+        echo "(log) No quiere continuar. Salimos"
+        zenity --timeout 2 --info --title="$NOMBRE" --width=250 \
+            --text="Saliendo...\nDisfruta tu Deck o tu dispositivo Steam."
+        salida
+        exit 1
+    fi
+
+}
+
+# Función para ejecutar asistente y borrar
+function fEliminar() {
+
+    echo "(log) Seleccionados: ${RUN}"
+
+    if [ "${RUN}" ]; then
+        zenity --question \
+            --title="**** ATENCION - CUIDADO **** " --width=500 --height=200 \
+            --ok-label="Eliminar y Continuar" \
+            --cancel-label="Salir" \
+            --text="Eliminas los directorios con los siguientes IDs?\n\n${RUN}"
+        ans=$?
+        if [ ! $ans -eq 0 ]; then
+            salida
+            exit 2
+        fi
+
+        for i in ${RUN}; do
+            echo "(log)--> Eliminando el directorio: $i"
+            rm -rf "$i"
+            [ -f "${NOMCACHE:?}/$(basename "$i").txt" ] && rm -f "${NOMCACHE:?}/$(basename "$i").txt"
+        done
+    fi
+}
+
+# Función para que llama para las ultimas tareas antes de salir
 function salida() {
     rm -rf "$IDPT" "$IDSC" 2>/dev/null
 }
 
 #########################################
-##      main
+##      MAIN
 #########################################
-#Hacemos las tareas iniciales
-entrada
+#
+# INICIAL
+#
+# Establecemos language
+fLanguage
+# Mostramos mensaje inicial
+fMensajeBienvenida
+# Requisitos de la aplicación
+fRequisitos
 
-# Elimianmos los Compatdata
-DIR="$HOME/.steam/root/steamapps/compatdata/"
-TITLE="COMPATDATA"
-lanzar
-
-# Elimianmos los ShaderCache
-DIR="$HOME/.steam/root/steamapps/shadercache/"
-TITLE="SHADERCACHE"
-lanzar
-
+#
+# PROCESO DE RECARGA: Recargamos todos los IDs que podamos
+#
+[ -d "$RUTASTEAM/steamapps" ] && DIR="$RUTASTEAM/steamapps" && fRecargaID
 for j in $RUTASEXTRA; do
-    LISTA=$(find "$j" -maxdepth 1 -mindepth 1 -type d)
-
-    for SD in $LISTA; do
-
-        if [ -d "$SD/steamapps/compatdata/" ]; then
-            DIR="$SD/steamapps/compatdata/"
-            TITLE="COMPATDATA"
-            lanzar
-        fi
-
-        if [ -d "$SD/steamapps/shadercache/" ]; then
-            DIR="$SD/steamapps/shadercache/"
-            TITLE="SHADERCACHE"
-            lanzar
-        fi
-
-    done
+    [ -d "$j/steamapps" ] && DIR="$j/steamapps" && fRecargaID
 done
 
-salida
+#
+# PROCESO DE MONTAJE DE LISTA: Creamos la lista de directorios
+#
+# Lista de juegos principal
+LISTAP=()
+fGestionarDirSteamapps
 
+#
+# MOSTRAMOS DIALOGO AL USUARIO: mostramos la lista que hemos ido preparando
+#
+fMostrarDialogo
+fEliminar
+
+salida
 exit 0
