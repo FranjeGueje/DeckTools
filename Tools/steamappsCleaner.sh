@@ -4,7 +4,7 @@
 # AUTOR: Paco Guerrero <fjgj1@hotmail.com> - FranjeGueje
 # LICENSE: GNU General Public License v3.0 (https://github.com/FranjeGueje/DeckTools/blob/master/LICENSE)
 # ABOUT: Busca compatdata y shadercache en los dispositivos mostrando los nombres de los que se puedan utilizar y muesta como "Desconocido" los huérfanos.
-#           perfecto para eliminarlos.
+#           Perfecto para eliminar estos objetos "perdidos".
 # REQUISITOS: Para una mejor salida de juegos nonsteam se requiere Protontricks
 # SALIDAS:
 #   0: Todo correcto, llegamos al final.
@@ -16,7 +16,9 @@
 #########################################
 ##      VARIABLES GLOBALES
 #########################################
+# Versión de la aplicación
 VERSION="2.0"
+# Nombre de la aplicación
 NOMBRE="Steamapps Cleaner"
 # Ruta de Steam principal, instalación local
 RUTASTEAM="$HOME/.local/share/Steam"
@@ -99,9 +101,11 @@ function fRequisitos() {
     # Generamos los IDs de protontricks a la vez que comprobamos si tenemos protontricks
     if flatpak run com.github.Matoking.protontricks -l 2>/dev/null >$IDPT; then
         echo "(log) protontricks encontrado en flatpak."
+        sed -i 's/team shortcut//' "$IDPT"
     else
         if protontricks -l 2>/dev/null >$IDPT; then
             echo "(log)protontricks encontrado como aplicación."
+            sed -i 's/team shortcut//' "$IDPT"
         else
             zenity --timeout 10 --error --text "$lTEXTNOPROTON" --width=300 --height=50
             zenity --question --title="$lATENCION" --width=500 --height=200 --ok-label="$lCONTINLIMIT" --cancel-label="$lSALIR" --text="$lTEXTLIMIT"
@@ -113,7 +117,6 @@ function fRequisitos() {
             fi
         fi
     fi
-    sed -i 's/team shortcut//' "$IDPT"
 }
 
 # Función para generar todos los IDs de Juegos (que se pueda...)
