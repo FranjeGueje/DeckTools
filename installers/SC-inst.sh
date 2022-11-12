@@ -27,7 +27,7 @@ if [ ! $ans -eq 0 ]; then
 fi
 
 cd "$DIRECT" || exit 2
-wget https://raw.githubusercontent.com/FranjeGueje/DeckTools/dev/Tools/steamappsCleaner.sh -O steamappsCleaner.sh && chmod +x steamappsCleaner.sh
+wget https://raw.githubusercontent.com/FranjeGueje/DeckTools/master/Tools/steamappsCleaner.sh -O steamappsCleaner.sh && chmod +x steamappsCleaner.sh
 
 zenity --question --width=300 --height=100 --ok-label="Si" --cancel-label="No" \
     --text="Instalado con exito.\nQuieres agregarlo a Steam?"
