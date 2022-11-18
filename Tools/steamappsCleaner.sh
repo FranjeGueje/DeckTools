@@ -17,7 +17,7 @@
 ##      VARIABLES GLOBALES
 #########################################
 # Versión de la aplicación
-VERSION="2.0"
+VERSION="2.1"
 # Nombre de la aplicación
 NOMBRE="Steamapps Cleaner"
 # Ruta de Steam principal, instalación local
@@ -28,6 +28,8 @@ RUTASEXTRA=("/run/media" "/run/media/$USER")
 IDPT=/tmp/PTsteamappsCleaner.tmp
 # Fichero temporal para de otra función para recabar más info sobre juegos
 IDSC=/tmp/SCsteamappsCleaner.tmp
+# Fichero de screenshots para buscar más aun
+IDSS="$RUTASTEAM/userdata/*/760/screenshots.vdf"
 # Nombre de la carpeta cache de nombres de juegos
 NOMCACHE="$RUTASTEAM/steamapps/steamappsCleaner"
 
@@ -104,7 +106,7 @@ function fRequisitos() {
         sed -i 's/team shortcut//' "$IDPT"
     else
         if protontricks -l 2>/dev/null >$IDPT; then
-            echo "(log)protontricks encontrado como aplicación."
+            echo "(log) protontricks encontrado como aplicación."
             sed -i 's/team shortcut//' "$IDPT"
         else
             zenity --timeout 10 --error --text "$lTEXTNOPROTON" --width=300 --height=50
@@ -161,7 +163,7 @@ function fPreparaSteamapps() {
     [ "$(dirname "$DIR")" == "$RUTASTEAM" ] && DISCO="SSD" || DISCO="$(basename "$(dirname "$DIR")")"
     [ -d "$NOMCACHE" ] || mkdir "$NOMCACHE"
 
-    UBICACIONES+="\n\t$DISCO)\n\t\t|--> $DIR\n"
+    UBICACIONES+="\n\t$DISCO)-|--> $DIR"
 
     ## Seleccionamos subelemento (compatdata o shadercache)
     for SUBDIR in $SUBD; do
@@ -180,11 +182,22 @@ function fPreparaSteamapps() {
                         LISTAP+=("0" "$i" "$N" "${SALIDASC//$N/}" "$TAMANO" "$DISCO" "${SUBDIR:0:6}" "N/A")
                         echo "${SALIDASC//$N/}" | tee "$NOMCACHE/$N.txt" >/dev/null
                     else
-                        if [ -f "$NOMCACHE/$N.txt" ]; then
-                            LISTAP+=("1" "$i" "$N" "Desconocido" "$TAMANO" "$DISCO" "${SUBDIR:0:6}" "$(cat "$NOMCACHE/$N.txt")")
-                        else
-                            LISTAP+=("1" "$i" "$N" "Desconocido" "$TAMANO" "$DISCO" "${SUBDIR:0:6}" "¿?")
+                        encontrado=0
+                        for userid in $IDSS; do
+                            if SALIDASS=$(grep -w "$N" <"$userid"); then
+                                LISTAP+=("0" "$i" "$N" "$(echo "$SALIDASS" | cut -d "\"" -f 4)" "$TAMANO" "$DISCO" "${SUBDIR:0:6}" "N/A")
+                                echo "$SALIDASS" | cut -d "\"" -f 4 | tee "$NOMCACHE/$N.txt" >/dev/null
+                                encontrado=1
+                            fi
+                        done
+                        if [ ! $encontrado -ne 0 ]; then
+                            if [ -f "$NOMCACHE/$N.txt" ]; then
+                                LISTAP+=("1" "$i" "$N" "Desconocido" "$TAMANO" "$DISCO" "${SUBDIR:0:6}" "$(cat "$NOMCACHE/$N.txt")")
+                            else
+                                LISTAP+=("1" "$i" "$N" "Desconocido" "$TAMANO" "$DISCO" "${SUBDIR:0:6}" "¿?")
+                            fi
                         fi
+
                     fi
                 fi
             fi
@@ -247,7 +260,7 @@ function fEliminar() {
 
         IFS="|"
         for i in ${RUN}; do
-            echo -ne "(log)--> Eliminando el directorio: $i\n"
+            echo -ne "(log) --> Eliminando el directorio: $i\n"
             rm -rf "$i"
             [ -f "${NOMCACHE:?}/$(basename "$i").txt" ] && rm -f "${NOMCACHE:?}/$(basename "$i").txt"
         done
@@ -277,19 +290,26 @@ fRequisitos
 #
 # PROCESO DE RECARGA: Recargamos todos los IDs que podamos
 #
+sleep 1
+echo "(log) Cargando IDs de jueogs"
 fEncontrarIDs
+echo "(log) Cargados los IDs de juegos"
 
 #
 # PROCESO DE MONTAJE DE LISTA: Creamos la lista de directorios
 #
 # Lista de juegos principal
 LISTAP=()
+echo "(log) Gestionando bibliotecas de Steam"
 fGestionarDirSteamapps
 
 #
 # MOSTRAMOS DIALOGO AL USUARIO: mostramos la lista que hemos ido preparando
 #
+echo "(log) Mostrando resultados"
+sleep 1
 fMostrarDialogo
+
 fEliminar
 
 salida
