@@ -40,4 +40,4 @@ encodedUrl="steam://addnonsteamgame/$(python3 -c "import urllib.parse;print(urll
 touch /tmp/addnonsteamgamefile
 xdg-open $encodedUrl
 
-ext 0
+exit 0
