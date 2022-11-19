@@ -11,17 +11,19 @@
 #   1: Si hemos pulsado el botón de "Salir" a mitad.
 #   2: Si salimos cancelando la eliminación.
 #   33: Salimos si no tenemos protontricks.
+#   88: No encuentra la ruta de Steam
+#   127: Salimos porque no se ha encontrao el software zenity
 ##############################################################################################################################################################
 
 #########################################
 ##      VARIABLES GLOBALES
 #########################################
 # Versión de la aplicación
-VERSION="2.1"
+VERSION="2.2"
 # Nombre de la aplicación
 NOMBRE="Steamapps Cleaner"
 # Ruta de Steam principal, instalación local
-RUTASTEAM="$HOME/.local/share/Steam"
+RUTASTEAM="$HOME/.steam/steam"
 # Rutas extra que explorará Steamapps Cleaner
 RUTASEXTRA=("/run/media" "/run/media/$USER")
 # Fichero temporal para ProtonTricks para buscar información de juegos
@@ -29,9 +31,8 @@ IDPT=/tmp/PTsteamappsCleaner.tmp
 # Fichero temporal para de otra función para recabar más info sobre juegos
 IDSC=/tmp/SCsteamappsCleaner.tmp
 # Fichero de screenshots para buscar más aun
-IDSS="$RUTASTEAM/userdata/*/760/screenshots.vdf"
-# Nombre de la carpeta cache de nombres de juegos
-NOMCACHE="$RUTASTEAM/steamapps/steamappsCleaner"
+IDSS=/tmp/SSsteamappsCleaner.tmp
+
 
 #########################################
 ##      FUNCIONES
@@ -62,6 +63,10 @@ function fLanguage() {
         lTITLEATENCION="**** ATENCION - CUIDADO **** "
         lSALIRNOELIMINAR="Salir sin eliminar"
         lTEXTELIMINAR="Eliminas los directorios con los siguientes IDs?"
+        lTEXTNOSTEAM="No se ha encontrado el directorio de Steam.\n\n$NOMBRE necesita esta ruta para continuar.\n\nAhora se va a lanzar un asistente para seleccionar manualmente la carpeta."
+        lTEXTSELECTSTEAM="Selecciona el directorio donde tienes instalado Steam:"
+        lTEXTSTEAMENCONTRADO="Se ha encontrado un directorio steamapps en la ruta seleccionada."
+        lTEXTNOENCONTRADO="El directorio seleccionado no contiene una ruta de Steam correcta.\n\nVuelve a arrancar el programa y selecciona una ruta correcta."
         ;;
     *)
         lTEXTBIENVENIDA="Welcome to $NOMBRE.\nVersion: $VERSION.\n\nLicense: GNU General Public License v3.0"
@@ -83,12 +88,22 @@ function fLanguage() {
         lTITLEATENCION="**** WARNING - BE CAREFULL **** "
         lSALIRNOELIMINAR="Exit without deleting"
         lTEXTELIMINAR="Do you delete directories with the following IDs?"
+        lTEXTNOSTEAM="The Steam directory was not found. $NOMBRE needs this path to continue. A wizard will now launch to manually select the folder."
+        lTEXTSELECTSTEAM="Select the directory where you have Steam installed."
+        lTEXTSTEAMENCONTRADO="A steamapps directory has been found in the selected path."
+        lTEXTNOENCONTRADO="The selected directory does not contain a correct Steam path. Restart this program and select a correct path."
+
         ;;
     esac
 }
 
 # Función para mostrar el mensaje de bienvenida
 function fMensajeBienvenida() {
+
+    if ! zenity --help >/dev/null ;then
+        echo "(log) No se encuentra el programa zenity, necesario para esta apliación"
+        exit 127
+    fi
 
     #Mostramos la versión
     zenity --timeout 2 --title="$NOMBRE $VERSION" --info --text "$lTEXTBIENVENIDA" --width=300 --height=50
@@ -98,7 +113,12 @@ function fMensajeBienvenida() {
 function fRequisitos() {
 
     # Borramos los temporales
-    rm -rf "$IDPT" "$IDSC" 2>/dev/null
+    rm -rf "$IDPT" "$IDSC" "$IDSS" 2>/dev/null
+
+    if ! zenity --help >/dev/null ;then
+        echo "(log) No se encuentra el programa zenity, necesario para esta apliación"
+        exit 127
+    fi
 
     # Generamos los IDs de protontricks a la vez que comprobamos si tenemos protontricks
     if flatpak run com.github.Matoking.protontricks -l 2>/dev/null >$IDPT; then
@@ -119,6 +139,30 @@ function fRequisitos() {
             fi
         fi
     fi
+
+    # Si no encontramos la ruta de Steam, avisamos.
+    if [ ! -d "$RUTASTEAM" ];then
+        zenity --error --text "$lTEXTNOSTEAM" --width=300 --height=50
+        DIRECT=$(zenity --file-selection \
+            --title="$NOMBRE $VERSION" \
+            --width=1000 --height=300 \
+            --text="$lTEXTSELECTSTEAM" \
+            --directory)
+        
+        if [ -d "$DIRECT"/steamapps ];then
+            zenity --timeout 5 --title="$NOMBRE $VERSION" --info --text "$lTEXTSTEAMENCONTRADO" --width=300 --height=50
+            RUTASTEAM="$DIRECT"
+        else
+            zenity --timeout 10 --error --text "$lTEXTNOENCONTRADO" --width=300 --height=50
+            exit 88
+        fi
+    fi
+
+    # VARIABLES GLOBALES
+    # Nombre de ruta de Screenshots usada para sacar más IDs
+    IDSSPATH="$RUTASTEAM/userdata/*/760/screenshots.vdf"
+    # Nombre de la carpeta cache de nombres de juegos
+    NOMCACHE="$RUTASTEAM/steamapps/steamappsCleaner"
 }
 
 # Función para generar todos los IDs de Juegos (que se pueda...)
@@ -147,6 +191,10 @@ function fEncontrarIDs() {
 
             done
         fi
+    done
+
+    for userid in $IDSSPATH; do
+        cat "$userid" >> "$IDSS"
     done
 }
 
@@ -182,22 +230,16 @@ function fPreparaSteamapps() {
                         LISTAP+=("0" "$i" "$N" "${SALIDASC//$N/}" "$TAMANO" "$DISCO" "${SUBDIR:0:6}" "N/A")
                         echo "${SALIDASC//$N/}" | tee "$NOMCACHE/$N.txt" >/dev/null
                     else
-                        encontrado=0
-                        for userid in $IDSS; do
-                            if SALIDASS=$(grep -w "$N" <"$userid"); then
-                                LISTAP+=("0" "$i" "$N" "$(echo "$SALIDASS" | cut -d "\"" -f 4)" "$TAMANO" "$DISCO" "${SUBDIR:0:6}" "N/A")
-                                echo "$SALIDASS" | cut -d "\"" -f 4 | tee "$NOMCACHE/$N.txt" >/dev/null
-                                encontrado=1
-                            fi
-                        done
-                        if [ ! $encontrado -ne 0 ]; then
+                        if SALIDASS=$(grep -w "$N" <"$IDSS"); then
+                            LISTAP+=("0" "$i" "$N" "$(echo "$SALIDASS" | cut -d "\"" -f 4)" "$TAMANO" "$DISCO" "${SUBDIR:0:6}" "N/A")
+                            echo "$SALIDASS" | cut -d "\"" -f 4 | tee "$NOMCACHE/$N.txt" >/dev/null
+                        else
                             if [ -f "$NOMCACHE/$N.txt" ]; then
                                 LISTAP+=("1" "$i" "$N" "Desconocido" "$TAMANO" "$DISCO" "${SUBDIR:0:6}" "$(cat "$NOMCACHE/$N.txt")")
                             else
                                 LISTAP+=("1" "$i" "$N" "Desconocido" "$TAMANO" "$DISCO" "${SUBDIR:0:6}" "¿?")
                             fi
                         fi
-
                     fi
                 fi
             fi
@@ -271,7 +313,7 @@ function fEliminar() {
 # Función para que llama para las ultimas tareas antes de salir
 function salida() {
 
-    rm -rf "$IDPT" "$IDSC" 2>/dev/null
+    rm -rf "$IDPT" "$IDSC" "$IDSS" 2>/dev/null
 }
 
 #########################################
@@ -290,10 +332,8 @@ fRequisitos
 #
 # PROCESO DE RECARGA: Recargamos todos los IDs que podamos
 #
-sleep 1
 echo "(log) Cargando IDs de jueogs"
 fEncontrarIDs
-echo "(log) Cargados los IDs de juegos"
 
 #
 # PROCESO DE MONTAJE DE LISTA: Creamos la lista de directorios
@@ -307,7 +347,6 @@ fGestionarDirSteamapps
 # MOSTRAMOS DIALOGO AL USUARIO: mostramos la lista que hemos ido preparando
 #
 echo "(log) Mostrando resultados"
-sleep 1
 fMostrarDialogo
 
 fEliminar
