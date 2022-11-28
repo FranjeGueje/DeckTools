@@ -201,7 +201,7 @@ function fEncontrarIDs() {
     done
 
     for userid in $IDSSPATH; do
-        cat "$userid" >> "$IDSS"
+        sed  '1,/shortcutnames/d' < "$userid" >> "$IDSS"
     done
 }
 
@@ -230,16 +230,16 @@ function fPreparaSteamapps() {
                 REALTAMANO=$(du -d 0 "$i" | cut -f 1)
                 ORDERBYDISK=$(tr 0123456789 abcdefghij <<< "${#REALTAMANO}")"${REALTAMANO:0:2}"
 
-                if SALIDA=$(grep -w "$N" <"$IDPT"); then
+                if SALIDA=$(grep -w -m1 "$N" <"$IDPT"); then
                     SALIDA=$(echo "$SALIDA" | sed -E 's/\ \([0-9]+\)//g')
                     LISTAP+=("0" "$i" "$N" "$SALIDA" "$TAMANO" "$DISCO" "$ORDERBYDISK" "${SUBDIR:0:6}" "N/A")
                     echo "$SALIDA" | tee "$NOMCACHE/$N.txt" >/dev/null
                 else
-                    if SALIDASC=$(grep -w "$N" <"$IDSC"); then
+                    if SALIDASC=$(grep -w -m1 "$N" <"$IDSC"); then
                         LISTAP+=("0" "$i" "$N" "${SALIDASC//$N/}" "$TAMANO" "$DISCO" "$ORDERBYDISK" "${SUBDIR:0:6}" "N/A")
                         echo "${SALIDASC//$N/}" | tee "$NOMCACHE/$N.txt" >/dev/null
                     else
-                        if SALIDASS=$(grep -w "$N" <"$IDSS"); then
+                        if SALIDASS=$(grep -w -m1 "$N" <"$IDSS"); then
                             LISTAP+=("0" "$i" "$N" "$(echo "$SALIDASS" | cut -d "\"" -f 4)"  "$TAMANO" "$DISCO" "$ORDERBYDISK" "${SUBDIR:0:6}" "N/A")
                             echo "$SALIDASS" | cut -d "\"" -f 4 | tee "$NOMCACHE/$N.txt" >/dev/null
                         else
