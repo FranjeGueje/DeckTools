@@ -4,6 +4,8 @@
 
 ### v2.3
 
+![order by disk Column](https://raw.githubusercontent.com/FranjeGueje/DeckTools/master/Doc/ColumnaOrdenar.png)
+
 Español:
 
 - Nueva columna para ordenar por tamaño en disco.
