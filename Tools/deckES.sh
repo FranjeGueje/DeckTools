@@ -14,7 +14,7 @@
 
 #
 # Chequeamos que corremos el script como root
-[ "$EUID" -ne 0 ] && echo "(Error) --> Ejecuta el script con privilegios de root o con sudo." && exit 1 
+#[ "$EUID" -ne 0 ] && echo "(Error) --> Ejecuta el script con privilegios de root o con sudo." && exit 1 
 
 # Quitamos el solo lectura de la particion rootfs de SteamOS
 sudo steamos-readonly disable
