@@ -130,11 +130,10 @@ function fRequisitos() {
     # Generamos los IDs de protontricks a la vez que comprobamos si tenemos protontricks
     if flatpak run com.github.Matoking.protontricks -l 2>/dev/null >$IDPT; then
         [ -n "$DEBUG" ] && echo "(log) protontricks encontrado en flatpak."
-        sed -i 's/Non-Steam shortcut: //' "$IDPT"
+        #sed -i 's/Non-Steam shortcut: //' "$IDPT"
     else
         if protontricks -l 2>/dev/null >$IDPT; then
             [ -n "$DEBUG" ] && echo "(log) protontricks encontrado como aplicación."
-            sed -i 's/Non-Steam shortcut: //' "$IDPT"
         else
             zenity --timeout 10 --error --text "$lTEXTNOPROTON" --width=300 --height=50
             zenity --question --title="$lATENCION" --width=500 --height=200 --ok-label="$lCONTINLIMIT" --cancel-label="$lSALIR" --text="$lTEXTLIMIT"
@@ -232,7 +231,10 @@ function fPreparaSteamapps() {
 
                 if SALIDA=$(grep -w -m1 "$N" <"$IDPT"); then
                     SALIDA=$(echo "$SALIDA" | sed -E 's/\ \([0-9]+\)//g')
-                    LISTAP+=("0" "$i" "$N" "$SALIDA""*" "$TAMANO" "$DISCO" "$ORDERBYDISK" "${SUBDIR:0:6}" "N/A")
+                    if [ "$(echo "$SALIDA" | grep -c "Non-Steam shortcut: ")" != 0 ]; then
+                        SALIDA="${SALIDA//Non-Steam shortcut: /}""*"
+                    fi
+                    LISTAP+=("0" "$i" "$N" "$SALIDA" "$TAMANO" "$DISCO" "$ORDERBYDISK" "${SUBDIR:0:6}" "N/A")
                     echo "$SALIDA" | tee "$NOMCACHE/$N.txt" >/dev/null
                 else
                     if SALIDASC=$(grep -w -m1 "$N" <"$IDSC"); then
