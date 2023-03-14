@@ -47,10 +47,7 @@ function fLanguage() {
     case "$LANG" in
     es_ES.UTF-8)
         lTEXTBIENVENIDA="Bienvenido a $NOMBRE.\nVersion: $VERSION.\n\nLicencia: GNU General Public License v3.0"
-        lATENCION="**** ATENCION ****"
-        lCONTINLIMIT="Continuar, pero limitado"
         lSALIR="Salir"
-        lTEXTLIMIT="Se ha detectado que faltan herramientas necesarias para que $NOMBRE tenga toda su funcionalidad.\n\nDesea continuar con limitaciones?"
         lAELIMINAR="$NOMBRE $VERSION"
         lBOTONELIMINAR="Eliminar"
         lTEXTPRINCIPAL="Selecciona los objectos a eliminar de estas ubicaciones:"
@@ -70,14 +67,11 @@ function fLanguage() {
         lTEXTSELECTSTEAM="Selecciona el directorio donde tienes instalado Steam:"
         lTEXTSTEAMENCONTRADO="Se ha encontrado un directorio steamapps en la ruta seleccionada."
         lTEXTNOENCONTRADO="El directorio seleccionado no contiene una ruta de Steam correcta.\n\nVuelve a arrancar el programa y selecciona una ruta correcta."
-        lTEXTNOENCONTRADOSID="Error interno. No se ha encontrado un componente necesario en \"$STEAMID\""
+        lTEXTNOENCONTRADOSID="Error interno. No se ha encontrado un componente necesario en $STEAMID"
         ;;
     *)
         lTEXTBIENVENIDA="Welcome to $NOMBRE.\nVersion: $VERSION.\n\nLicense: GNU General Public License v3.0"
-        lATENCION="**** WARNING ****"
-        lCONTINLIMIT="Continue, but limited"
         lSALIR="Exit"
-        lTEXTLIMIT="It has been detected that tools necessary for $NAME to have full functionality are missing.\n\nDo you want to continue with limitations?"
         lAELIMINAR="$NOMBRE $VERSION"
         lBOTONELIMINAR="Delete"
         lTEXTPRINCIPAL="Select the objects to delete from these locations:"
@@ -148,7 +142,7 @@ function fRequisitos() {
     NOMCACHE="$RUTASTEAM/steamapps/steamappsCleaner"
 
     STEAMID_LINE=$(awk '/^__STEAMID_BEGINS__/ { print NR + 1; exit 0; }' "$0")
-    tail -n +${STEAMID_LINE} $0 | tar xz -C /tmp
+    tail -n +"${STEAMID_LINE}" "$0" | tar xz -C /tmp
 
     # Comprobamos que esté nuestro ejecutable SteamID
     if [ ! -f "$STEAMID" ];then
@@ -169,7 +163,15 @@ function fRecargaID() {
 # Funcion principal para recargar IDs
 function fEncontrarIDs() {
 
-    $STEAMID /home/deck/.local/share/Steam/userdata/116437234/config/shortcuts.vdf "$IDDB"
+    SHORTCUTS="/home/deck/.local/share/Steam/userdata/*/config/shortcuts.vdf"
+    for i in $SHORTCUTS ; do
+	    echo "$i" | grep -v "/userdata/0/config/shortcuts.vdf" >/dev/null 2>/dev/null
+		ans=$?
+        if [ $ans -eq 0 ]; then
+                $STEAMID "$i" "$IDDB"
+	    fi
+	
+    done
 
     if [ -d "$RUTASTEAM/steamapps" ]; then
         DIR="$RUTASTEAM/steamapps"
@@ -339,4 +341,5 @@ fEliminar
 
 salida
 exit 0
+# shellcheck disable=SC2317
 __STEAMID_BEGINS__
