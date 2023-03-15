@@ -1,6 +1,7 @@
-import vdf
-import sys
-import os
+from vdf import binary_load
+from sys import argv, exit
+from os import path
+from os.path import isfile
 
 def steam_id(shortcut_file_path:str, destination_file:str):
     """ Add to a file the tuple "Game Name"<tab>"IDAPP" 
@@ -11,7 +12,7 @@ def steam_id(shortcut_file_path:str, destination_file:str):
     """
     
     with open(shortcut_file_path, "rb") as f:
-        shortcut = vdf.binary_load(f)
+        shortcut = binary_load(f)
     
     with open(destination_file, 'a') as f:
         for k, v in shortcut["shortcuts"].items():
@@ -24,10 +25,10 @@ def steam_id(shortcut_file_path:str, destination_file:str):
 if __name__ == '__main__':
     # * argv[1] --> shortcut_file from steam
     # * argv[2] --> file to add the information
-    if len(sys.argv) == 3:
-        if os.path.isfile(sys.argv[1]):
-            steam_id(sys.argv[1],sys.argv[2])
+    if len(argv) == 3:
+        if isfile(argv[1]):
+            steam_id(argv[1],argv[2])
         else:
-            sys.exit("\"SteamID\" the vdf file doens't exists")
+            exit("SteamID: the vdf file doens't exists")
     else:
-        sys.exit("\"SteamID\" necessarily requires two arguments")        
+        exit("SteamID necessarily requires two arguments")        

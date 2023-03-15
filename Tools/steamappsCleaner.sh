@@ -7,7 +7,6 @@
 #           Perfecto para eliminar estos objetos "perdidos".
 #        Search compatdata and shadercache on the devices showing the names of the usable ones and show as "Unknown" the orphans.
 #           Perfect for removing these "missing" objects.
-# REQUISITOS: Sin requisitos
 # REQUIREMENTS: No requisites
 # SALIDAS/EXITs:
 #   0: Todo correcto, llegamos al final. All correct, we have reached the end.
@@ -163,14 +162,9 @@ function fRecargaID() {
 # Funcion principal para recargar IDs
 function fEncontrarIDs() {
 
-    SHORTCUTS="/home/deck/.local/share/Steam/userdata/*/config/shortcuts.vdf"
+    SHORTCUTS="$RUTASTEAM/userdata/??*/config/shortcuts.vdf"
     for i in $SHORTCUTS ; do
-	    echo "$i" | grep -v "/userdata/0/config/shortcuts.vdf" >/dev/null 2>/dev/null
-		ans=$?
-        if [ $ans -eq 0 ]; then
-                $STEAMID "$i" "$IDDB"
-	    fi
-	
+        $STEAMID "$i" "$IDDB"
     done
 
     if [ -d "$RUTASTEAM/steamapps" ]; then
