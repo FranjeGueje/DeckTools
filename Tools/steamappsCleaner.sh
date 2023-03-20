@@ -22,7 +22,7 @@
 ##      VARIABLES GLOBALES
 #########################################
 # Versión de la aplicación
-VERSION="3.0"
+VERSION="3.0.1"
 # Nombre de la aplicación
 NOMBRE="Steamapps Cleaner"
 # Ruta de Steam principal, instalación local
