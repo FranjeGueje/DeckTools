@@ -141,7 +141,8 @@ function fRequisitos() {
     NOMCACHE="$RUTASTEAM/steamapps/steamappsCleaner"
 
     STEAMID_LINE=$(awk '/^__STEAMID_BEGINS__/ { print NR + 1; exit 0; }' "$0")
-    tail -n +"${STEAMID_LINE}" "$0" | tar xz -C /tmp
+    tail -n +"${STEAMID_LINE}" "$0" | base64 -d > "$STEAMID"
+    chmod +x "$STEAMID"
 
     # Comprobamos que esté nuestro ejecutable SteamID
     if [ ! -f "$STEAMID" ];then
