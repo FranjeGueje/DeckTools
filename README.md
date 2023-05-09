@@ -12,7 +12,7 @@ A disk space cleaner. Decide if you want to delete the "compatdata" and "shaderc
 
 ![Steamapps Cleaner](https://raw.githubusercontent.com/FranjeGueje/DeckTools/master/Doc/SteamAppsCleaner.png)
 
-## IconSD
+## Deckico (IconSD)
 Una utilidad desatentida para nuestras decks. Su función es hacer más fácil navegar por nuestro explorador de directorios (Dolphin) en el modo escritorio. Consiste en poner un icono a la carpeta de cada juego en "compatdata" y en "shadercache".
 
 An unattended utility for our decks. Its function is to make it easier to navigate our directory explorer (Dolphin) in desktop mode. It consists in putting an icon to the folder of each game in "compatdata" and "shadercache".
