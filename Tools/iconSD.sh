@@ -7,9 +7,9 @@
 #        Add images of our ALREADY DOWNLOADED steam games to the COMPATDATA and SHADERCACHE directories
 # SALIDAS/EXITs:
 #   0: Todo correcto, llegamos al final. All correct, we have reached the end.
-#   1: Error, argumentos incorrectos.
-#   2: Error, no tenemos zenity y queremos abrir el gui.
-#   3: No se ha podido instalar o desinstalar
+#   1: Error, argumentos incorrectos. Wrong args...
+#   2: No se ha podido instalar o desinstalar. Can't install/uninstall
+#   3: Error. Estás usando uninstall, install o removeicons juntos. Install and uninstall cannot be used together.
 #
 ##############################################################################################################################################################
 
@@ -45,26 +45,30 @@ NOMBRE="IconSD"
 VERSION=1.1
 
 #########################################
-##       GET ARGUMENTOS
+##       GET ARGUMENTS
 #########################################
 
 # Get help (--help)
 function showhelp() {
-    echo -e "$(basename "$0") [-h] [-v] [--gui] [-i] [-u]\n\
-    [Opciones/Options]\n\
-    \t-h|--help\t\tEsta ayuda. This help.\n\
-    \t--version\t\tMuestra la versión de la aplicación.// Displays the version of the application.\n\
-    \t-v|--verbose\t\tMuestra una salida más detallada.// Displays more detailed output\n\
-    \t--gui\t\t\tIniciar modo asistente [WIP].// It'll runing the wizzard [WIP].\n\
-    \t-i|--install\t\tInstala el script en el inicio.// Install this program to run on boot.\n\
-    \t-u|--uninstall\t\tDesinstala el script.// Uninstall the script."
+    echo -e "IconSD: set images to your shadercache and compatdata directories\n\
+    $(basename "$0") [-v]\t\t\tSet images on the shadercache and compatdata directories\n\
+    $(basename "$0") --removeicons [-v]\tDelete all icons on your folders (compatdata and shadercache)\n\
+    $(basename "$0") -i [-v]\t\t\tInstall this program to run on boot\n\
+    $(basename "$0") -u [-v]\t\t\tUnnstall this program to run on boot\n\
+
+[Options]\n\
+    -h|--help\t\t\tThis help.\n\
+    --version\t\t\tDisplays the version of the application.\n\
+    -v|--verbose\t\tDisplays more detailed output.\n\
+    -i|--install\t\tInstall this program to run on boot.\n\
+    -u|--uninstall\t\tUninstall this program to run on boot.\n\
+    --removeicons\t\tDelete all icons on your folders (compatdata and shadercache)."
 }
 
 # To get args
 while [ $# -ne 0 ]; do
     case "$1" in
         -h | --help)
-            # No hacemos nada más, porque showhelp se saldrá del programa
             showhelp
             exit 0
         ;;
@@ -74,24 +78,20 @@ while [ $# -ne 0 ]; do
         -v | --verbose)
             VERBOSE=S
         ;;
-        -g |--gui)
-            if  zenity --help >/dev/null ;then
-                GUI=S
-            else
-                echo "zenity is not present. Exiting..." && exit 2
-            fi
-        ;;
         -i | --install)
-            [ ! -d "$HOME/.config/autostart" ] && mkdir "$HOME/.config/autostart"
-            echo -ne "$CONTENT" > "$LINKDEST" && chmod +x "$LINKDEST" && exit 0
-            exit 3
+            [ -n "${OPERATION+x}" ] && echo -e "You are using \"install\" option with others incompatible option." && exit 3
+            INSTALL=S; OPERATION=S
         ;;
         -u | --uninstall)
-            [ -f "$LINKDEST" ] && rm -f "$LINKDEST" && exit 0
-            exit 3
+            [ -n "${OPERATION+x}" ] && echo -e "You are using \"uninstall\" option with other incompatible option." && exit 3
+            UNINSTALL=S; OPERATION=S
+        ;;
+        --removeicons)
+            [ -n "${OPERATION+x}" ] && echo -e "You are using \"removeicons\" option with other incompatible option." && exit 3
+            REMOVEICONS=S; OPERATION=S
         ;;
         *)
-            echo "Argumento no válido.// Something is wrong..."
+            echo -ne "Something is wrong... Check the arguments.\n\n"
             showhelp
             exit 1
         ;;
@@ -110,45 +110,59 @@ function installImages() {
     for i in $DIR_EXEC ;do
         NAME=$(basename "$i")
         
-        if [ "$NAME" != 0 ];then
-            for j in $DIRGRID; do
-
-                # Busca imagenes en el primer nivel
-                IMAGEN=$(find "$j" -maxdepth 1 -type f -iname "*$NAME*ico*" -print -quit)
-                [ "$IMAGEN" == "" ] && IMAGEN=$(find "$j" -maxdepth 1 -type f -iname "*$NAME*logo*" -print -quit)
-                [ "$IMAGEN" == "" ] && IMAGEN=$(find "$j" -maxdepth 1 -type f -iname "*$NAME*hero*" -print -quit)
-                [ "$IMAGEN" == "" ] && IMAGEN=$(find "$j" -maxdepth 1 -type f  \( -iname \*"$NAME"\*.jpg -o -iname \*"$NAME"\*.png -o -iname \*"$NAME"\*.ico \) -print -quit)
-                
-                # Busca imagenes en el segundo nivel
-                [ "$IMAGEN" == "" ] && IMAGEN=$(find "$j" -mindepth 1 -maxdepth 2 -type f -iname "*$NAME*ico*" -print -quit)
-                [ "$IMAGEN" == "" ] && IMAGEN=$(find "$j" -mindepth 1 -maxdepth 2 -type f -iname "*$NAME*logo*" -print -quit)
-                [ "$IMAGEN" == "" ] && IMAGEN=$(find "$j" -mindepth 1 -maxdepth 2 -type f -iname "*$NAME*hero*" -print -quit)
-                [ "$IMAGEN" == "" ] && IMAGEN=$(find "$j" -mindepth 1 -maxdepth 1 -type f  \( -iname \*"$NAME"\*.jpg -o -iname \*"$NAME"\*.png -o -iname \*"$NAME"\*.ico \) -print -quit)
-
-                if [ "$IMAGEN" != "" ];then
-                    echo -ne "$ENTRY""$IMAGEN" > "$i/$NAME_FILE" && [ -n "${VERBOSE+x}" ] && echo -e "[*]$NAME:\t[$(basename "$(dirname "$i")")] Set $IMAGEN on $i/$NAME_FILE"
-                else
-                    [ -n "${VERBOSE+x}" ] && echo -e "[ ]$NAME:\t[$(basename "$(dirname "$i")")] Can't set image on $i"
-                fi
+        [ "$NAME" != 0 ] && for j in $DIRGRID; do
+            # Seek until this deep
+            MAXNIVEL=2
+            for ((n=1; n <= MAXNIVEL; n++)) ; do
+                m=$((n-1))
+                IMAGEN=$(find "$j" -mindepth $m -maxdepth $n -type f -iname "*$NAME*ico*" -print -quit)
+                [ "$IMAGEN" == "" ] && IMAGEN=$(find "$j" -mindepth $m -maxdepth $n -type f -iname "*$NAME*logo*" -print -quit) || break
+                [ "$IMAGEN" == "" ] && IMAGEN=$(find "$j" -mindepth $m -maxdepth $n -type f -iname "*$NAME*hero*" -print -quit) || break
+                [ "$IMAGEN" == "" ] && IMAGEN=$(find "$j" -mindepth $m -maxdepth $n -type f  \( -iname \*"$NAME"\*.jpg -o -iname \*"$NAME"\*.png -o -iname \*"$NAME"\*.ico \) -print -quit) || break
             done
+        done
+
+        if [ "$IMAGEN" != "" ];then
+            echo -ne "$ENTRY""$IMAGEN" > "$i/$NAME_FILE" && [ -n "${VERBOSE+x}" ] && echo -e "[*]$NAME:\t[$(basename "$(dirname "$i")")] Set $IMAGEN on $i/$NAME_FILE"
+        else
+            [ -n "${VERBOSE+x}" ] && echo -e "[ ]$NAME:\t[$(basename "$(dirname "$i")")] Can't set image on $i"
         fi
     done
 }
 
-# Wellcome message
-function wellCome() {
-    [ "$LANG" == "es_ES.UTF-8" ] && TEXTWC="Bienvenido a $NOMBRE.\nVersion: $VERSION.\n\nLicencia: GNU General Public License v3.0" || \
-        TEXTWC="Welcome to $NOMBRE.\nVersion: $VERSION.\n\nLicense: GNU General Public License v3.0"
-    zenity --timeout 2 --title="$NOMBRE $VERSION" --info --text "$TEXTWC" --width=300 --height=50
+# Install IconSD on boot
+function installIconSD(){
+    [ ! -d "$HOME/.config/autostart" ] && mkdir "$HOME/.config/autostart"
+    echo -ne "$CONTENT" > "$LINKDEST" && chmod +x "$LINKDEST" && [ -n "${VERBOSE+x}" ] && echo -e "IconSD has been installed on $LINKDEST."
+    
+    [ -f "$LINKDEST" ] && exit 0
+    exit 2
 }
 
-
-# Bye message
-function bye() {
-    [ "$LANG" == "es_ES.UTF-8" ] && TEXTWC="Se han creado todos los iconos.\n Gracias por usar el programa." || \
-        TEXTWC="All icons have been created.\nThank you for using this software."
+# Uninstall IconSD from boot
+function uninstallIconSD(){
+    [ -f "$LINKDEST" ] && rm -f "$LINKDEST" && [ -n "${VERBOSE+x}" ] && echo -e "IconSD has been uninstalled from $LINKDEST."
     
-    zenity --timeout 2 --title="$NOMBRE $VERSION" --info --text "$TEXTWC" --width=300 --height=50
+    [ -f "$LINKDEST" ] && exit 2
+    exit 0
+}
+
+# Remove the icons from the all folders
+function removeIconSD(){
+    [ -n "${VERBOSE+x}" ] && echo "Deleting icons on $COMPATDATA"
+    [ -d "$COMPATDATA" ] && find "$COMPATDATA" -type f -name .directory -exec rm -f {} \;
+
+    [ -n "${VERBOSE+x}" ] && echo "Deleting icons on $SHADERCACHE"
+    [ -d "$SHADERCACHE" ] && find "$SHADERCACHE" -type f -name .directory -exec rm -f {} \;
+
+    for i in $EXTERNAL; do
+        [ -n "${VERBOSE+x}" ] && echo "Deleting icons on $i./compatdata/"
+        [ -d "$i""compatdata/" ] && find "$i""compatdata/" -type f -name .directory -exec rm -f {} \;
+        [ -n "${VERBOSE+x}" ] && echo "Deleting icons on $i./shadercache/"
+        [ -d "$i""shadercache/" ] && find "$i""shadercache/" -type f -name .directory -exec rm -f {} \;
+    done
+
+    exit 0
 }
 
 #########################################
@@ -156,8 +170,9 @@ function bye() {
 #########################################
 #
 
-# Wellcome message
-[ -n "${GUI+x}" ] && wellCome
+[ -n "${INSTALL+x}" ] && installIconSD 
+[ -n "${UNINSTALL+x}" ] && uninstallIconSD 
+[ -n "${REMOVEICONS+x}" ] && removeIconSD 
 
 # Seek in compatdata of ssd
 [ -d "$COMPATDATA" ] && DIR_EXEC="$COMPATDATA/*" && installImages
@@ -170,7 +185,5 @@ for i in $EXTERNAL; do
     [ -d "$i""compatdata/" ] && [ "$(ls -A "$i""compatdata/")" ] && DIR_EXEC="$i""compatdata/*" && installImages
     [ -d "$i""shadercache/" ] && [ "$(ls -A "$i""shadercache/")" ] && DIR_EXEC="$i""shadercache/*" && installImages
 done
-
-[ -n "${GUI+x}" ] && bye
 
 exit 0
