@@ -5,7 +5,7 @@ Set of tools and utilities for our Steam Decks.
 
 ## GE-Proton Rolling Release
 ![GE-Proton Rolling Release](https://raw.githubusercontent.com/FranjeGueje/DeckTools/master/Images/GE-Proton-RR.png)
-![GE-Proton Rolling Release](https://raw.githubusercontent.com/FranjeGueje/DeckTools/master/Images/GE-Proton-RR-on Steam.png)
+![GE-Proton Rolling Release](https://raw.githubusercontent.com/FranjeGueje/DeckTools/master/Images/GE-Proton-RR-on_Steam.png)
 
 Crea una herramienta de compatibilidad llamada "GE-Proton" con la última versión de GE-Proton descargada de Internet, ejemplo GE-Proton-9.11, y se mantendrá para que use la filosofía de Rolling Release. En las siguientes ejecuciones, actualizará a la siguiente versión de la web de GE-Proton pero conservará la misma herramienta en Steam para que no tengas que cambiar nada de tus juegos. Utilizaría la misma filosofía que hace "Proton Experimenta"
 
