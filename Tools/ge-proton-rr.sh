@@ -6,7 +6,11 @@
 # ABOUT: Download and add the latest version of GE-Proton as a Steam compatibility tool by always using the same one
 #
 # PARAMS:
-# --no-gui --> unattended
+# --help --> help about this tool
+# --no-gui --> unattended, without gui
+# --debug --> create debug.log file with all operations
+# --force --> the latest GE-Proton will be downloaded and installed forcibly
+# --no-backup --> No backup the actual GE-Proton of compatibility folder
 #
 # DEBUG MODE: run 'DEBUG=Y path-to-this-script/thi-script.sh'
 #

@@ -7,9 +7,9 @@ Set of tools and utilities for our Steam Decks.
 ![GE-Proton Rolling Release](https://raw.githubusercontent.com/FranjeGueje/DeckTools/master/Images/GE-Proton-RR.png)
 ![GE-Proton Rolling Release](https://raw.githubusercontent.com/FranjeGueje/DeckTools/master/Images/GE-Proton-RR-on_Steam.png)
 
-Crea una herramienta de compatibilidad llamada "GE-Proton" con la última versión de GE-Proton descargada de Internet, ejemplo GE-Proton-9.11, y se mantendrá para que use la filosofía de Rolling Release. En las siguientes ejecuciones, actualizará a la siguiente versión de la web de GE-Proton pero conservará la misma herramienta en Steam para que no tengas que cambiar nada de tus juegos. Utilizaría la misma filosofía que hace "Proton Experimenta"
+Crea una herramienta de compatibilidad llamada "GE-Proton" con la última versión de GE-Proton descargada de Internet, ejemplo GE-Proton-9.11, y se mantendrá para que use la filosofía de Rolling Release. En las siguientes ejecuciones, actualizará a la siguiente versión de la web de GE-Proton pero conservará la misma herramienta en Steam para que no tengas que cambiar nada de tus juegos. Utilizaría la misma filosofía que hace "Proton Experimental"
 
-GE-Proton Rolling Release creates a compatibility tool called "GE-Proton" with the latest version of GE-Proton downloaded from the Internet, example GE-Proton-9.11, and will be maintained to use the Rolling Release philosophy. On subsequent runs, it will update to the next version from the GE-Proton website but keep the same tool on Steam so you don't have to change anything about your games. It would use the same philosophy that "Proton Experimenta" does.
+GE-Proton Rolling Release creates a compatibility tool called "GE-Proton" with the latest version of GE-Proton downloaded from the Internet, example GE-Proton-9.11, and will be maintained to use the Rolling Release philosophy. On subsequent runs, it will update to the next version from the GE-Proton website but keep the same tool on Steam so you don't have to change anything about your games. It would use the same philosophy that "Proton Experimental" does.
 
 ## Steamapps Cleaner
 ![Steamapps Cleaner](https://raw.githubusercontent.com/FranjeGueje/DeckTools/master/Doc/steamppscleaner_gridv.jpg)
