@@ -167,7 +167,7 @@ Would you like to check if you can install or upgrade to the latest version of G
             done
         fi
         [ -n "$DEBUG" ] && to_debug_file "[INFO] GUI: Running..."
-        if curl -s https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest | grep browser_download_url; then
+        if curl -s https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest | grep browser_download_url >/dev/null 2>&1; then
             "$0" "${__parameters[@]}" &
             PID=$!
             zenity --timeout 10 --title="$__title" --info --text "Please wait until a completion message appears." --width=300 --height=80
