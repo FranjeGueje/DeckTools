@@ -52,7 +52,7 @@ pre_launch(){
     TOOLPATH=$(readlink -f "$(dirname "$0")")
     DEBUGFILE="$TOOLPATH/debug.log"
     OLDVERSION="$TOOLPATH/$(basename "$0").old"
-    MYAPP_FILE_FROM_INTERNET="https://raw.githubusercontent.com/FranjeGueje/DeckTools/master/Tools/ge-proton-rr.sh"
+    MYAPP_FILE_FROM_INTERNET="https://raw.githubusercontent.com/FranjeGueje/DeckTools/master/Tools/GE-Proton-RR-Latest/ge-proton-rr.sh"
     DOWNLOADEDFILE="$TOOLPATH/GE-Proton.tar.gz"
     EXTRACTFOLDER="$TOOLPATH/.extract/"
 
@@ -70,7 +70,7 @@ post_launch(){
     [ -f "$DOWNLOADEDFILE" ] && rm -f "$DOWNLOADEDFILE"
     [ -d "$EXTRACTFOLDER" ] && rm -Rf "$EXTRACTFOLDER"
     [ -n "$DEBUG" ] && to_debug_file "Exiting..."
-    echo -e "Exiting..."
+    echo -e "[INFO] Exiting..."
     exit 0
 }
 
@@ -88,7 +88,7 @@ function to_debug_file() {
 # Print the title and version
 #
 show_title(){
-    echo -e "Launching \"$NOMBRE\" - ver.$VERSION\nThis script will download and install the lastest GE-Proton from Internet."
+    echo -e "[INFO] Launching \"$NOMBRE\" - ver.$VERSION\nThis script will download and install the lastest GE-Proton from Internet."
 }
 
 ##
@@ -100,21 +100,19 @@ should_be_updated(){
 
     if ! wget -O "$__file" -q "$MYAPP_FILE_FROM_INTERNET" ;then
         [ -n "$DEBUG" ] && to_debug_file "[WARNING] UPDATER: Cannot download the latest script version from Internet."
-        echo "Cannot download the latest GE-Proton version."
+        echo "[WARNING] Cannot download the latest script version."
     else
         VERSION_UPDATE=$(grep 'VERSION=' "$__file" | head -n 1 | cut -d '=' -f 2)
         if [ "$VERSION_UPDATE" -gt "$VERSION" ]; then
-            echo Actualizar && exit 0
             [ -n "$DEBUG" ] && to_debug_file "[INFO] UPDATER: It's necesary updating to version $VERSION_UPDATE"
-            #cp "$0" "$OLDVERSION" && mv "$__file" "$0"
-            echo "$NOMBRE is updated. Please, rerun this tool!"
+            cp "$0" "$OLDVERSION" && mv "$__file" "$0"
+            echo "[WARNING] $NOMBRE is updated. Please, rerun this tool!"
             if which zenity >/dev/null 2>&1; then
                 zenity --title="$NOMBRE - ver.$VERSION" --info --text "$NOMBRE is updated. Please, rerun this tool!" --width=300 --height=80
                 [ -n "$DEBUG" ] && to_debug_file "[INFO] UPDATER: $NOMBRE updated to $VERSION_UPDATE Exiting"
                 exit 0
         fi
         else
-            echo No_Actualizar && exit 0
             [ -n "$DEBUG" ] && to_debug_file "[INFO] UPDATER: Not necesary updating. The actual version is $VERSION and the web is $VERSION_UPDATE"
         fi
     fi
@@ -169,20 +167,24 @@ Would you like to check if you can install or upgrade to the latest version of G
             done
         fi
         [ -n "$DEBUG" ] && to_debug_file "[INFO] GUI: Running..."
-        "$0" "${__parameters[@]}" &
-        PID=$!
-        zenity --timeout 10 --title="$NOMBRE $VERSION" --info --text "Please wait until a completion message appears." --width=300 --height=80
-        wait $PID
-        zenity --timeout 5 --question --title="$NOMBRE $VERSION" --text="Remember to restart Steam so that it recognizes this compatility tool.\nDo you want to do it now?" --width=300 --height=80
-        if [ $? -eq 0 ]; then
-            # Yes
-            pkill steam
+        if curl -s https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest | grep browser_download_url; then
+            "$0" "${__parameters[@]}" &
+            PID=$!
+            zenity --timeout 10 --title="$__title" --info --text "Please wait until a completion message appears." --width=300 --height=80
+            wait $PID
+            zenity --timeout 5 --question --title="$__title" --text="Remember to restart Steam so that it recognizes this compatility tool.\nDo you want to do it now?" --width=300 --height=80
+            if [ $? -eq 0 ]; then
+                # Yes
+                pkill steam
+            fi
+        else
+            zenity --title="$__title" --error --text "You don't seem to have internet" --width=300 --height=80
         fi
     else
         [ -n "$DEBUG" ] && to_debug_file "[INFO] GUI: Canceling...Exiting from gui mode."
     fi
     
-    zenity --timeout 2 --title="$NOMBRE $VERSION" --info --text "Finish. Thank you!" --width=300 --height=80
+    zenity --timeout 2 --title="$__title" --info --text "Finish. Thank you!" --width=300 --height=80
     exit 0
 }
 
@@ -196,13 +198,13 @@ check_requisites(){
     for i in "${__requisites[@]}"; do
         if ! __test=$(which "$i" 2>/dev/null); then
             [ -n "$DEBUG" ] && to_debug_file "[ERROR] REQUIREMENTS: Missing required component $i"
-            echo "Missing required component $i" && exit 1
+            echo "[ERROR] Missing required component $i" && exit 1
         fi
     done
 
     if [ ! -d "$COMPATFOLDER" ];then
         [ -n "$DEBUG" ] && to_debug_file "[ERROR] REQUIREMENTS: Missing Steam folder"
-        echo "Missing Steam folder" && exit 1
+        echo "[ERROR] Missing Steam folder" && exit 1
     fi
 
      # Has zenity this machine?
@@ -228,7 +230,7 @@ download_lastest_GE-Proton(){
     [ -n "$DEBUG" ] && to_debug_file "[INFO] DOWNLOADER: Starting to download the file"
     if ! wget -O "$DOWNLOADEDFILE" -q --show-progress "$__url" ;then
         [ -n "$DEBUG" ] && to_debug_file "[ERROR] DOWNLOADER: Cannot download the latest GE-Proton version."
-        echo "Cannot download the latest GE-Proton version." && exit 2
+        echo "[ERROR] Cannot download the latest GE-Proton version." && exit 2
     fi
     [ -n "$DEBUG" ] && to_debug_file "[INFO] DOWNLOADER: File downloaded from $__url"
 }
@@ -241,7 +243,7 @@ extract_gep(){
 
     if [ ! -f "$DOWNLOADEDFILE" ];then
         [ -n "$DEBUG" ] && to_debug_file "[ERROR] EXTRACTOR: Unable to continue, file not found."
-        echo "Unable to continue, file not found." && exit 3
+        echo "[ERROR] Unable to continue, file not found." && exit 3
     fi
 
     # Extract the tar.gz file
@@ -258,7 +260,7 @@ extract_gep(){
     __name=$(find "$EXTRACTFOLDER" -mindepth 1 -maxdepth 1 -type d )
     if [ "$__count" -ne 1 ]; then
         [ -n "$DEBUG" ] && to_debug_file "[ERROR] EXTRACTOR: The result of extract the tar.gz file is not a element."
-        echo "Error extracting the GE-Proton file." && exit 4
+        echo "[ERROR] Error extracting the GE-Proton file." && exit 4
     fi
     # Creating a personalize version name
     touch "$__name"/version-"$(basename "$__name")"
@@ -370,7 +372,7 @@ while [ $# -ne 0 ]; do
         GEP_NOBACKUP=Y
         ;;
     *)
-        echo -e "Parameter $1 is incorrect. Showing the help"
+        echo -e "[ERROR] Parameter $1 is incorrect. Showing the help"
         [ -n "$DEBUG" ] && to_debug_file "[ERROR] PARAM: Parameter $1 is incorrect."
         show_help
         exit 253
