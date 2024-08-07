@@ -168,14 +168,18 @@ Would you like to check if you can install or upgrade to the latest version of G
         fi
         [ -n "$DEBUG" ] && to_debug_file "[INFO] GUI: Running..."
         if curl -s https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest | grep browser_download_url >/dev/null 2>&1; then
+            [ -f "$INSTALLFOLDER"version ] && PRE_version=$(cat "$INSTALLFOLDER"version)
             "$0" "${__parameters[@]}" &
             PID=$!
             zenity --timeout 10 --title="$__title" --info --text "Please wait until a completion message appears." --width=300 --height=80
             wait $PID
-            zenity --timeout 5 --question --title="$__title" --text="Remember to restart Steam so that it recognizes this compatility tool.\nDo you want to do it now?" --width=300 --height=80
-            if [ $? -eq 0 ]; then
-                # Yes
-                pkill steam
+            [ -f "$INSTALLFOLDER"version ] && POST_version=$(cat "$INSTALLFOLDER"version)
+            if [ "$PRE_version" != "$POST_version" ]; then
+                zenity --timeout 5 --question --title="$__title" --text="Remember to restart Steam so that it recognizes this compatility tool.\nDo you want to do it now?" --width=300 --height=80
+                if [ $? -eq 0 ]; then
+                    # Yes
+                    pkill steam
+                fi
             fi
         else
             zenity --title="$__title" --error --text "You don't seem to have internet" --width=300 --height=80
