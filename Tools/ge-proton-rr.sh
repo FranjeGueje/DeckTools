@@ -105,13 +105,13 @@ should_be_updated(){
         VERSION_UPDATE=$(grep 'VERSION=' "$__file" | head -n 1 | cut -d '=' -f 2)
         if [ "$VERSION_UPDATE" -gt "$VERSION" ]; then
             [ -n "$DEBUG" ] && to_debug_file "[INFO] UPDATER: It's necesary updating to version $VERSION_UPDATE"
-            cp "$0" "$OLDVERSION" && mv "$__file" "$0"
+            cp "$0" "$OLDVERSION" && mv "$__file" "$0" && chmod +x "$0"
             echo "[WARNING] $NOMBRE is updated. Please, rerun this tool!"
             if which zenity >/dev/null 2>&1; then
                 zenity --title="$NOMBRE - ver.$VERSION" --info --text "$NOMBRE is updated. Please, rerun this tool!" --width=300 --height=80
-                [ -n "$DEBUG" ] && to_debug_file "[INFO] UPDATER: $NOMBRE updated to $VERSION_UPDATE Exiting"
-                exit 0
-        fi
+            fi
+            [ -n "$DEBUG" ] && to_debug_file "[INFO] UPDATER: $NOMBRE updated to $VERSION_UPDATE Exiting"
+            exit 0
         else
             [ -n "$DEBUG" ] && to_debug_file "[INFO] UPDATER: Not necesary updating. The actual version is $VERSION and the web is $VERSION_UPDATE"
         fi
