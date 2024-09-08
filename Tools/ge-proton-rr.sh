@@ -285,7 +285,6 @@ extract_gep(){
     # Creating a personalize version name
     touch "$__name"/version-"$(basename "$__name")"
     echo "$URL" > "$__name"/url_downloaded
-    sleep 33
     [ -n "$DEBUG" ] && to_debug_file "[INFO] EXTRACTOR: Extraction complete and OK."
 }
 
