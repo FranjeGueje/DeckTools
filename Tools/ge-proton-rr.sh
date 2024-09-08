@@ -47,7 +47,7 @@ function show_help() {
 #
 pre_launch(){
     NOMBRE="GE-Proton Rolling Release"
-    VERSION=1
+    VERSION=2
 
     TOOLPATH=$(readlink -f "$(dirname "$0")")
     DEBUGFILE="$TOOLPATH/debug.log"
@@ -59,6 +59,17 @@ pre_launch(){
     COMPATFOLDER="$HOME/.local/share/Steam/compatibilitytools.d/"
     INSTALLFOLDER="$COMPATFOLDER"GE-Proton/
     BACKUPFOLDER="$TOOLPATH"/GE-Proton_backup/
+    CHECKURL="$INSTALLFOLDER""url_downloaded"
+
+    # If DEBUGFILE has more of a size then we delete the file
+    if [ -f "$DEBUGFILE" ];then
+        local __tamano=__limite= 
+        __tamano=$(stat -c%s "$DEBUGFILE")
+        # 5 MB en bytes
+        __limite=$((5 * 1024 * 1024))
+        # Compara el tamaño del archivo con el límite de 5 MB
+        [ "$__tamano" -gt "$__limite" ] && rm "$DEBUGFILE"
+    fi
 
     [ -n "$DEBUG" ] && echo -e "--------------------------------BEGIN-----------------------------------------------" >>"$DEBUGFILE"
 }
@@ -224,19 +235,24 @@ check_requisites(){
 # Download the lastest GE-Proton from web
 #
 download_lastest_GE-Proton(){
-    local __url=
+    URL=$(curl -s https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest | grep browser_download_url | cut -d '"' -f 4 | grep ".tar.gz")
+    [ -n "$DEBUG" ] && to_debug_file "[INFO] DOWNLOADER: The url to download GE-Proton is $URL"
 
-    __url=$(curl -s https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest | grep browser_download_url | cut -d '"' -f 4 | grep ".tar.gz")
-    [ -n "$DEBUG" ] && to_debug_file "[INFO] DOWNLOADER: The url to download GE-Proton is $__url"
+    if [ -f "$CHECKURL" ] && [ "$URL" = "$(cat "$CHECKURL")" ] && [ "$GEP_INSTALLING" != 'Y' ];then
+        [ -n "$DEBUG" ] && to_debug_file "[INFO] DOWNLOADER: It seems that there is no need to install a new version. The download url is the same as last time."
+        post_launch
+    fi
+
+    [ -n "$DEBUG" ] && to_debug_file "[INFO] DOWNLOADER: There is a new url to download a new version or it need install a new version."
     
     [ -f "$DOWNLOADEDFILE" ] && rm "$DOWNLOADEDFILE" && [ -n "$DEBUG" ] && to_debug_file "[WARNING] DOWNLOADER: Removing the file $DOWNLOADEDFILE before download the new file."
 
     [ -n "$DEBUG" ] && to_debug_file "[INFO] DOWNLOADER: Starting to download the file"
-    if ! wget -O "$DOWNLOADEDFILE" -q --show-progress "$__url" ;then
+    if ! wget -O "$DOWNLOADEDFILE" -q --show-progress "$URL" ;then
         [ -n "$DEBUG" ] && to_debug_file "[ERROR] DOWNLOADER: Cannot download the latest GE-Proton version."
         echo "[ERROR] Cannot download the latest GE-Proton version." && exit 2
     fi
-    [ -n "$DEBUG" ] && to_debug_file "[INFO] DOWNLOADER: File downloaded from $__url"
+    [ -n "$DEBUG" ] && to_debug_file "[INFO] DOWNLOADER: File downloaded from $URL"
 }
 
 ##
@@ -268,6 +284,8 @@ extract_gep(){
     fi
     # Creating a personalize version name
     touch "$__name"/version-"$(basename "$__name")"
+    echo "$URL" > "$__name"/url_downloaded
+    sleep 33
     [ -n "$DEBUG" ] && to_debug_file "[INFO] EXTRACTOR: Extraction complete and OK."
 }
 
