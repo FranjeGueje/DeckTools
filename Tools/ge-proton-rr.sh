@@ -22,6 +22,8 @@
 # 2 --> Cannot download the lastest file
 # 3 --> Before the extracting: the file is not downloaded
 # 4 --> Error extracting the tar.gz file
+# 8 --> App upgraded
+# 88 --> It seems that there is no need to install a new version of GE-Proton
 # 253-> Invalid parameter
 ##############################################################################################################################################################
 
@@ -47,7 +49,7 @@ function show_help() {
 #
 pre_launch(){
     NOMBRE="GE-Proton Rolling Release"
-    VERSION=2
+    VERSION=3
 
     TOOLPATH=$(readlink -f "$(dirname "$0")")
     DEBUGFILE="$TOOLPATH/debug.log"
@@ -82,7 +84,6 @@ post_launch(){
     [ -d "$EXTRACTFOLDER" ] && rm -Rf "$EXTRACTFOLDER"
     [ -n "$DEBUG" ] && to_debug_file "Exiting..."
     echo -e "[INFO] Exiting..."
-    exit 0
 }
 
 ##
@@ -118,11 +119,10 @@ should_be_updated(){
             [ -n "$DEBUG" ] && to_debug_file "[INFO] UPDATER: It's necesary updating to version $VERSION_UPDATE"
             cp "$0" "$OLDVERSION" && mv "$__file" "$0" && chmod +x "$0"
             echo "[WARNING] $NOMBRE is updated. Please, rerun this tool!"
-            if which zenity >/dev/null 2>&1; then
-                zenity --title="$NOMBRE - ver.$VERSION" --info --text "$NOMBRE is updated. Please, rerun this tool!" --width=300 --height=80
-            fi
+            [ "$GEP_NOGUI" != "Y" ] && zenity --title="$NOMBRE - ver.$VERSION" --info --text "$NOMBRE is updated. Please, rerun this tool!" --width=300 --height=80
             [ -n "$DEBUG" ] && to_debug_file "[INFO] UPDATER: $NOMBRE updated to $VERSION_UPDATE Exiting"
-            exit 0
+            post_launch
+            exit 8
         else
             [ -n "$DEBUG" ] && to_debug_file "[INFO] UPDATER: Not necesary updating. The actual version is $VERSION and the web is $VERSION_UPDATE"
         fi
@@ -182,12 +182,26 @@ Would you like to check if you can install or upgrade to the latest version of G
             [ -f "$INSTALLFOLDER"version ] && PRE_version=$(cat "$INSTALLFOLDER"version)
             "$0" "${__parameters[@]}" &
             PID=$!
-            zenity --timeout 10 --title="$__title" --info --text "Please wait until a completion message appears." --width=300 --height=80
+            (
+            i=0
+            while ps -p $PID > /dev/null 2>&1; do
+                echo $i
+                sleep 0.05
+                ((i++))
+                [ $i -eq 99 ] && i=0
+            done
+            ) | zenity --progress --title="$__title" --text="Please wait until $NOMBRE has finished ..." --percentage=0 --auto-close --no-cancel
             wait $PID
+            EXIT_CODE=$?
+            if [ "$EXIT_CODE" = 88 ]; then
+                echo -e "[INFO] It seems that there is no need to install a new version."
+                zenity --title="$__title" --info --text "It seems that there is no need to install a new version" --width=300 --height=80 --no-wrap
+                post_launch
+                exit 88
+            fi
             [ -f "$INSTALLFOLDER"version ] && POST_version=$(cat "$INSTALLFOLDER"version)
             if [ "$PRE_version" != "$POST_version" ]; then
-                zenity --timeout 5 --question --title="$__title" --text="Remember to restart Steam so that it recognizes this compatility tool.\nDo you want to do it now?" --width=300 --height=80
-                if [ $? -eq 0 ]; then
+                if zenity --timeout 8 --question --title="$__title" --text="Remember to restart Steam so that it recognizes this compatility tool.\nDo you want to do it now?" --width=300 --height=80 ; then
                     # Yes
                     pkill steam
                 fi
@@ -199,7 +213,7 @@ Would you like to check if you can install or upgrade to the latest version of G
         [ -n "$DEBUG" ] && to_debug_file "[INFO] GUI: Canceling...Exiting from gui mode."
     fi
     
-    zenity --timeout 2 --title="$__title" --info --text "Finish. Thank you!" --width=300 --height=80
+    zenity --timeout 2 --title="$__title" --info --text "Finish. Thank you!\n\nMade with love." --width=300 --height=80
     exit 0
 }
 
@@ -241,6 +255,7 @@ download_lastest_GE-Proton(){
     if [ -f "$CHECKURL" ] && [ "$URL" = "$(cat "$CHECKURL")" ] && [ "$GEP_INSTALLING" != 'Y' ];then
         [ -n "$DEBUG" ] && to_debug_file "[INFO] DOWNLOADER: It seems that there is no need to install a new version. The download url is the same as last time."
         post_launch
+        exit 88
     fi
 
     [ -n "$DEBUG" ] && to_debug_file "[INFO] DOWNLOADER: There is a new url to download a new version or it need install a new version."
@@ -412,3 +427,4 @@ should_be_installed
 install_gep
 
 post_launch
+exit 0
