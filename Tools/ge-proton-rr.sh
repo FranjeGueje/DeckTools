@@ -58,7 +58,7 @@ pre_launch(){
     TOOLPATH=$(readlink -f "$(dirname "$0")")
     DEBUGFILE="$TOOLPATH/debug.log"
     OLDVERSION="$TOOLPATH/$(basename "$0").old"
-    MYAPP_FILE_FROM_INTERNET="https://raw.githubusercontent.com/FranjeGueje/DeckTools/master/Tools/GE-Proton-RR-Latest/ge-proton-rr.sh"
+    MYAPP_FILE_FROM_INTERNET="https://raw.githubusercontent.com/FranjeGueje/DeckTools/refs/heads/master/Tools/GE-Proton-RR-Latest/ge-proton-rr.sh"
     DOWNLOADEDFILE="$TOOLPATH/GE-Proton.tar.gz"
     EXTRACTFOLDER="$TOOLPATH/.extract/"
 
