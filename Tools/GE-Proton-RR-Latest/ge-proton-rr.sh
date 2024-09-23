@@ -35,13 +35,17 @@
 #
 function show_help() {
     echo -e "[Usages]\n$0 -h|--help\
-    \n$0 [-v] [-f] [--no-gui] [--no-backup]\n\
+    \n$0 [-v] [-f] [--no-gui] [--no-backup]\
+    \n$0 [-v] [--install]\
+    \n$0 [-v] [--uninstall]\n\
     \n[Parameters]\n\
     \t-h|--help\t\tThis help.\n\
     \t-v|--debug|--verbose\tThis parameter will creating a file $DEBUGFILE with verbose info.\n\
     \t-f|--force\t\tThe latest GE-Proton will be downloaded and installed forcibly.\n\
     \t--no-gui\t\tRun $NOMBRE automatically.\n\
-    \t--no-backup\t\tNo backup the actual GE-Proton of compatibility folder."
+    \t--no-backup\t\tNo backup the actual GE-Proton of compatibility folder.\n\
+    \t-i|--install\t\tInstall this app in silent mode on desktop's autostart.\n\
+    \t-u|--uninstall\t\tUninstall this app from desktop's autostart."
 }
 
 ##
@@ -49,7 +53,7 @@ function show_help() {
 #
 pre_launch(){
     NOMBRE="GE-Proton Rolling Release"
-    VERSION=3
+    VERSION=4
 
     TOOLPATH=$(readlink -f "$(dirname "$0")")
     DEBUGFILE="$TOOLPATH/debug.log"
@@ -72,8 +76,6 @@ pre_launch(){
         # Compara el tamaño del archivo con el límite de 5 MB
         [ "$__tamano" -gt "$__limite" ] && rm "$DEBUGFILE"
     fi
-
-    [ -n "$DEBUG" ] && echo -e "--------------------------------BEGIN-----------------------------------------------" >>"$DEBUGFILE"
 }
 
 ##
@@ -94,6 +96,45 @@ post_launch(){
 #
 function to_debug_file() {
     echo -e "$(date +"%Y-%m-%d %H:%M:%S") - $1" >>"$DEBUGFILE"
+}
+
+##
+# Install or Uninstall the software on autostart
+#
+function inst_unins_autostart() {
+    if [ "$GEP_AUTOSTART" == "Y" ];then
+        do_install
+        post_launch
+        exit 0
+    elif [ "$GEP_AUTOSTART" == "N" ];then
+        do_uninstall
+        post_launch
+        exit 0
+    fi
+}
+
+##
+# Install the software on autostart
+#
+function do_install() {
+    echo -e "[Desktop Entry]
+Name=GE-Proton-RR
+Comment=Create a compatibility tool in Rolling Release format from the official GE-Proton
+Exec=$0 --no-gui -v
+Terminal=false
+Type=Application" > "$HOME/.config/autostart/ge-proton-rr.desktop"
+}
+
+##
+# Uninstall the software on autostart
+#
+function do_uninstall() {
+    if [ -f "$HOME/.config/autostart/ge-proton-rr.desktop" ];then
+        rm -f "$HOME/.config/autostart/ge-proton-rr.desktop"
+        [ -n "$DEBUG" ] && to_debug_file "[INFO] GUI: Removed the autoupdate from the file $HOME/.config/autostart/ge-proton-rr.desktop"
+    else
+        [ -n "$DEBUG" ] && to_debug_file "[WARNING] : The file $HOME/.config/autostart/ge-proton-rr.desktop not found."
+    fi
 }
 
 ##
@@ -150,6 +191,7 @@ gui_gep(){
         __version_installed="\nIt appears that you do not have any GE-Proton Rolling Release version installed.\n"
     fi
 
+    local __buttonInstall="Install Autostart" __buttonRemove="Remove Autostart"
     local __checkboxes=
     __checkboxes=$(zenity --list --checklist \
         --title="$__title" \
@@ -163,11 +205,25 @@ Would you like to check if you can install or upgrade to the latest version of G
         --separator="|" \
         --width=300 \
         --height=350 \
-        --hide-column=2 )
+        --hide-column=2 \
+        --extra-button="$__buttonInstall" \
+        --extra-button="$__buttonRemove" )
 
     local __response=$?
     [ -n "$DEBUG" ] && to_debug_file "[INFO] GUI: The values of options are: $__checkboxes"
-    if [ $__response -eq 0 ]; then
+
+    if [ "$__checkboxes" == "$__buttonInstall" ];then
+        [ -n "$DEBUG" ] && to_debug_file "[INFO] GUI: Installing the autostart desktop."
+        do_install
+        zenity --title="$__title" --info \
+        --text "Installed the autoupdate file for $NOMBRE.\n$NOMBRE will now attempt to update automatically and silently every time the Desktop is started." \
+        --width=300 --height=80
+        [ -n "$DEBUG" ] && to_debug_file "[INFO] GUI: Installed in $HOME/.config/autostart/ge-proton-rr.desktop"
+    elif [ "$__checkboxes" == "$__buttonRemove" ];then
+        [ -n "$DEBUG" ] && to_debug_file "[INFO] GUI: Removing the autostart desktop."
+        do_uninstall
+        zenity --title="$__title" --info --text "Removed the autoupdate from the file $HOME/.config/autostart/ge-proton-rr.desktop" --width=300 --height=80
+    elif [ $__response -eq 0 ]; then
         local __parameters=("--no-gui")
         if [ -z "$__checkboxes" ]; then
             [ -n "$DEBUG" ] && to_debug_file "[INFO] GUI: No option has been selected."
@@ -407,6 +463,24 @@ while [ $# -ne 0 ]; do
         [ -n "$DEBUG" ] && to_debug_file "[INFO] PARAM: no backup of actual GE-Proton compatibility tool."
         GEP_NOBACKUP=Y
         ;;
+    -i | --install)
+        [ -n "$DEBUG" ] && to_debug_file "[INFO] PARAM: Install mode. Installing $NOMBRE in desktop's autostart."
+        if [ "$GEP_AUTOSTART" == "N" ];then
+            [ -n "$DEBUG" ] && to_debug_file "[ERROR] PARAM: You have selected --uninstall option before."
+            show_help
+            exit 253
+        fi
+        GEP_AUTOSTART=Y
+        ;;
+    -u | --uninstall)
+        [ -n "$DEBUG" ] && to_debug_file "[INFO] PARAM: Install mode. Uninstalling $NOMBRE from desktop's autostart."
+        if [ "$GEP_AUTOSTART" == "Y" ];then
+            [ -n "$DEBUG" ] && to_debug_file "[ERROR] PARAM: You have selected --install option before."
+            show_help
+            exit 253
+        fi
+        GEP_AUTOSTART=N
+        ;;
     *)
         echo -e "[ERROR] Parameter $1 is incorrect. Showing the help"
         [ -n "$DEBUG" ] && to_debug_file "[ERROR] PARAM: Parameter $1 is incorrect."
@@ -416,6 +490,9 @@ while [ $# -ne 0 ]; do
     esac
     shift
 done
+
+# Instalamos o no
+inst_unins_autostart
 
 show_title
 check_requisites
