@@ -117,10 +117,12 @@ function inst_unins_autostart() {
 # Install the software on autostart
 #
 function do_install() {
+    local __fichero=
+    __fichero=$(readlink -f "$0")
     echo -e "[Desktop Entry]
 Name=GE-Proton-RR
 Comment=Create a compatibility tool in Rolling Release format from the official GE-Proton
-Exec=$0 --no-gui -v
+Exec=$__fichero --no-gui -v
 Terminal=false
 Type=Application" > "$HOME/.config/autostart/ge-proton-rr.desktop"
 }
