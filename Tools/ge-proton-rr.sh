@@ -53,12 +53,12 @@ function show_help() {
 #
 pre_launch(){
     NOMBRE="GE-Proton Rolling Release"
-    VERSION=4
+    VERSION=5
 
     TOOLPATH=$(readlink -f "$(dirname "$0")")
     DEBUGFILE="$TOOLPATH/debug.log"
     OLDVERSION="$TOOLPATH/$(basename "$0").old"
-    MYAPP_FILE_FROM_INTERNET="https://raw.githubusercontent.com/FranjeGueje/DeckTools/master/Tools/GE-Proton-RR-Latest/ge-proton-rr.sh"
+    MYAPP_FILE_FROM_INTERNET="https://api.github.com/repos/FranjeGueje/GE-Proton-RR/releases/latest"
     DOWNLOADEDFILE="$TOOLPATH/GE-Proton.tar.gz"
     EXTRACTFOLDER="$TOOLPATH/.extract/"
 
@@ -153,23 +153,32 @@ should_be_updated(){
     local __file=
     __file=$(basename "$0").lastversion && [ -f "$__file" ] && rm "$__file"
 
-    if ! wget -O "$__file" -q "$MYAPP_FILE_FROM_INTERNET" ;then
-        [ -n "$DEBUG" ] && to_debug_file "[WARNING] UPDATER: Cannot download the latest script version from Internet."
-        echo "[WARNING] Cannot download the latest script version."
-    else
-        VERSION_UPDATE=$(grep 'VERSION=' "$__file" | head -n 1 | cut -d '=' -f 2)
-        if [ "$VERSION_UPDATE" -gt "$VERSION" ]; then
-            [ -n "$DEBUG" ] && to_debug_file "[INFO] UPDATER: It's necesary updating to version $VERSION_UPDATE"
-            cp "$0" "$OLDVERSION" && mv "$__file" "$0" && chmod +x "$0"
-            echo "[WARNING] $NOMBRE is updated. Please, rerun this tool!"
-            [ "$GEP_NOGUI" != "Y" ] && zenity --title="$NOMBRE - ver.$VERSION" --info --text "$NOMBRE is updated. Please, rerun this tool!" --width=300 --height=80
-            [ -n "$DEBUG" ] && to_debug_file "[INFO] UPDATER: $NOMBRE updated to $VERSION_UPDATE Exiting"
-            post_launch
-            exit 8
+    if curl -s --head --request GET https://api.github.com --max-time 3 | grep "HTTP/" 2>/dev/null >/dev/null; then
+        local sha_web
+        sha_web=$(curl -L "$(curl -s "$MYAPP_FILE_FROM_INTERNET" | grep browser_download_url | cut -d '"' -f 4 | grep sha512sum 2>/dev/null)" 2>/dev/null)
+        if diff <(sha512sum "$0" | cut -d ' ' -f1) <(echo "$sha_web" | cut -d ' ' -f1) >/dev/null 2>&1; then
+            to_debug_file "[INFO] Is the same version"
         else
-            [ -n "$DEBUG" ] && to_debug_file "[INFO] UPDATER: Not necesary updating. The actual version is $VERSION and the web is $VERSION_UPDATE"
+            to_debug_file "[WARING] Updating $NOMBRE"
+            local URL
+            URL=$(curl -s "$MYAPP_FILE_FROM_INTERNET" | grep browser_download_url | cut -d '"' -f 4 | grep x86_64| grep -w ge-proton-rr.sh)
+            wget -O "$0".bak -q --show-progress "$URL" >/dev/null 2>&1
+            # shellcheck disable=SC2181
+            if [ $? -eq 0 ]; then
+                echo "[WARNING] $NOMBRE is updated. Please, rerun this tool!"
+                cp "$0" "$OLDVERSION" && mv "$0".bak "$0" && chmod +x "$0"
+                [ "$GEP_NOGUI" != "Y" ] && zenity --title="$NOMBRE - ver.$VERSION" --info --text "$NOMBRE is updated. Please, rerun this tool!" --width=300 --height=80
+                [ -n "$DEBUG" ] && to_debug_file "[INFO] UPDATER: $NOMBRE updated to $VERSION_UPDATE Exiting"
+                post_launch
+                exit 8
+            else
+                to_debug_file "[ERROR] Cannot download the latest version."
+            fi
         fi
+    else
+        to_debug_file "[WARNING] You don't have Internet"
     fi
+
     [ -f "$__file" ] && rm "$__file"
 }
 
